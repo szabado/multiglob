@@ -11,7 +11,7 @@ import (
 
 const testPattern = "i am a test subject and not a fruit!"
 
-func BenchmarkRegex(b *testing.B) {
+func BenchmarkMatchRegex(b *testing.B) {
 	regexes := make([]*regexp.Regexp, 0, len(regexPatterns))
 	for _, s := range regexPatterns {
 		regexes = append(regexes, regexp.MustCompile(s))
@@ -26,7 +26,7 @@ func BenchmarkRegex(b *testing.B) {
 	}
 }
 
-func BenchmarkGlob(b *testing.B) {
+func BenchmarkMatchGlob(b *testing.B) {
 	globs := make([]glob.Glob, 0, len(globPatterns))
 	for _, s := range globPatterns {
 		globs = append(globs, glob.MustCompile(s))
@@ -41,13 +41,13 @@ func BenchmarkGlob(b *testing.B) {
 	}
 }
 
-func BenchmarkMultiGlob(b *testing.B) {
+func BenchmarkMatchMultiGlob(b *testing.B) {
 	builder := multiglob.New()
 	for _, s := range globPatterns {
-		builder.AddPattern(s, s)
+		builder.MustAddPattern(s, s)
 	}
 
-	matcher := builder.Build()
+	matcher := builder.MustCompile()
 
 	b.ResetTimer()
 	b.ReportAllocs()
@@ -56,7 +56,16 @@ func BenchmarkMultiGlob(b *testing.B) {
 	}
 }
 
-func BenchmarkBuilderParseGlob(b *testing.B) {
+func BenchmarkParseGlob(b *testing.B) {
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		for _, pattern := range globPatterns {
+			glob.MustCompile(pattern)
+		}
+	}
+}
+
+func BenchmarkParseMultiGlob(b *testing.B) {
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
 		b.StopTimer()
@@ -64,17 +73,9 @@ func BenchmarkBuilderParseGlob(b *testing.B) {
 		b.StartTimer()
 
 		for _, pattern := range globPatterns {
-			builder.AddPattern(pattern, pattern)
+			builder.MustAddPattern(pattern, pattern)
 		}
-	}
-}
-
-func BenchmarkParseGlob(b *testing.B) {
-	b.ReportAllocs()
-	for i := 0; i < b.N; i++ {
-		for _, pattern := range globPatterns {
-			glob.Compile(pattern)
-		}
+		builder.MustCompile()
 	}
 }
 

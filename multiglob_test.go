@@ -36,6 +36,13 @@ func TestMatch(t *testing.T) {
 		{
 			input: "test",
 			patterns: []string{
+				"*test",
+			},
+			output: true,
+		},
+		{
+			input: "test",
+			patterns: []string{
 				"tes*t",
 			},
 			output: true,
@@ -50,7 +57,59 @@ func TestMatch(t *testing.T) {
 		{
 			input: "test.hit",
 			patterns: []string{
+				"test*",
+				"*hit",
+			},
+			output: true,
+		},
+		{
+			input: "foo",
+			patterns: []string{
+				"test",
+			},
+			output: false,
+		},
+		{
+			input: "foo",
+			patterns: []string{
+				"test*",
+			},
+			output: false,
+		},
+		{
+			input: "foo",
+			patterns: []string{
+				"*test",
+			},
+			output: false,
+		},
+		{
+			input: "foo",
+			patterns: []string{
+				"tes*t",
+			},
+			output: false,
+		},
+		{
+			input: "test.hit",
+			patterns: []string{
 				"test*hit.hit",
+			},
+			output: false,
+		},
+		{
+			input: "test.hit",
+			patterns: []string{
+				"*test",
+				"hit*",
+			},
+			output: false,
+		},
+		{
+			input: "test.hit",
+			patterns: []string{
+				"*test",
+				"hit*",
 			},
 			output: false,
 		},
@@ -62,10 +121,10 @@ func TestMatch(t *testing.T) {
 
 			b := New()
 			for _, pattern := range test.patterns {
-				b.AddPattern(pattern, pattern)
+				b.MustAddPattern(pattern, pattern)
 			}
 
-			mg := b.Build()
+			mg := b.MustCompile()
 
 			require.Equal(test.output, mg.Match(test.input))
 		})

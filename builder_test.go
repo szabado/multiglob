@@ -12,7 +12,7 @@ func TestAddPattern(t *testing.T) {
 	require := r.New(t)
 
 	b := New()
-	b.AddPattern("test", "pattern")
+	b.MustAddPattern("test", "pattern")
 
 	require.Equal(1, len(b.patterns))
 	require.Equal(parser.Parse("pattern"), b.patterns["test"])

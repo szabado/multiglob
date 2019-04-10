@@ -16,11 +16,20 @@ func New() *Builder {
 	}
 }
 
-func (m *Builder) AddPattern(name, pattern string) {
+func (m *Builder) AddPattern(name, pattern string) error {
+	m.MustAddPattern(name, pattern)
+	return nil
+}
+
+func (m *Builder) MustAddPattern(name, pattern string) {
 	m.patterns[name] = parser.Parse(pattern)
 }
 
-func (m *Builder) Build() MultiGlob {
+func (m *Builder) Compile() (MultiGlob, error){
+	return m.MustCompile(), nil
+}
+
+func (m *Builder) MustCompile() MultiGlob {
 	var final *parser.Node
 	for _, p := range m.patterns {
 		if final == nil {
@@ -44,26 +53,27 @@ func (mg *MultiGlob) Match(rawInput string) bool {
 }
 
 func match(node *parser.Node, input string, any bool) bool {
-	var childInput string
-	var childAny bool
+	var (
+		childInput string
+		childAny   bool
+	)
+
 	switch node.Type {
 	case parser.TypeAny:
 		if node.Leaf {
-			//fmt.Println("any leaf node")
 			return true
-		} else {
-			//fmt.Println("any node. Adding children")
-
-			childInput = input
-			childAny = true
 		}
+
+		childInput = input
+		childAny = true
+
 	case parser.TypeText:
-		//fmt.Println("text type")
 		if any {
-			//fmt.Println("following an any")
 			if node.Leaf && strings.HasSuffix(input, node.Value) {
 				return true
-			} else if i := strings.Index(input, node.Value); i >= 0 {
+			} else if i := strings.Index(input, node.Value); i < 0 {
+				return false
+			} else {
 				trunc := input[i+len(node.Value):]
 				if match(node, trunc, true) {
 					return true
@@ -73,24 +83,17 @@ func match(node *parser.Node, input string, any bool) bool {
 				childAny = false
 			}
 		} else {
-			//fmt.Println("direct matching")
-			//fmt.Println(input, " ", node.Value)
 			if node.Leaf && node.Value == input {
-				//fmt.Println("leaf matches")
 				return true
-			} else if strings.HasPrefix(input, node.Value) {
-				trunc := input[len(node.Value):]
-
-				if match(node, trunc, true) {
-					return true
-				}
-
-				childAny = false
-				childInput = trunc
+			} else if !strings.HasPrefix(input, node.Value) {
+				return false
 			}
+
+			trunc := input[len(node.Value):]
+
+			childAny = false
+			childInput = trunc
 		}
-	case parser.TypeRoot:
-		fallthrough
 	default:
 		childInput = input
 		childAny = any

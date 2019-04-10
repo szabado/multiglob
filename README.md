@@ -16,7 +16,7 @@ func main() {
     mgb.AddPattern("foo", "foo*")
     mgb.AddPattern("bar", "bar*")
 
-    mg := mgb.Build()
+    mg := mgb.MustCompile()
 
     mg.Match("football", func(name string) {
         fmt.Printf("I matched: %s\n", name)
