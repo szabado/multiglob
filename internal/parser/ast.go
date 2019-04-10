@@ -6,31 +6,16 @@ type NodeType int
 
 //go:generate stringer -type=NodeType
 const (
-	TypeNothing NodeType = iota
+	TypeRoot NodeType = iota
 	TypeAny
 	TypeText
+	TypeLeaf
 )
 
 type Node struct {
 	Type     NodeType
 	Value    string
 	Children []*Node
-}
-
-func newNode(t NodeType) *Node {
-	switch t {
-	case TypeAny:
-		fallthrough
-	case TypeText:
-		return &Node{
-			Type: t,
-		}
-
-	case TypeNothing:
-		fallthrough
-	default:
-		return nil
-	}
 }
 
 func (n *Node) String() string {
@@ -71,18 +56,27 @@ func getNodeType(tokenType lexerTokenType) NodeType {
 	case eof:
 		fallthrough
 	default:
-		return TypeNothing
+		return TypeLeaf
 	}
 }
 
 func Parse(input string) *Node {
-	n := parse(newLexer(input))
-	if n == nil {
-		n = &Node{
-			Value:    "",
-			Type:     TypeText,
-			Children: nil,
+	root := &Node{
+		Value:    "",
+		Type:     TypeRoot,
+		Children: nil,
+	}
+
+	if n := parse(newLexer(input)); n != nil {
+		root.Children = []*Node{n}
+	} else {
+		root.Children = []*Node{
+			{
+				Children: nil,
+				Value:    "",
+				Type:     TypeText,
+			},
 		}
 	}
-	return n
+	return root
 }

@@ -14,14 +14,68 @@ func TestParser(t *testing.T) {
 		{
 			input: "test",
 			output: &Node{
-				Children: nil,
-				Value:    "test",
-				Type:     TypeText,
+				Type:  TypeRoot,
+				Value: "",
+				Children: []*Node{
+					{
+						Children: nil,
+						Value:    "test",
+						Type:     TypeText,
+					},
+				},
 			},
 		},
 		{
 			input: "test*",
 			output: &Node{
+				Type:  TypeRoot,
+				Value: "",
+				Children: []*Node{
+					{
+						Children: []*Node{
+							{
+								Children: nil,
+								Value:    "*",
+								Type:     TypeAny,
+							},
+						},
+						Value: "test",
+						Type:  TypeText,
+					},
+				},
+			},
+		},
+		{
+			input: "test1*test2",
+			output: &Node{
+				Type:  TypeRoot,
+				Value: "",
+				Children: []*Node{
+					{
+						Children: []*Node{
+							{
+								Children: []*Node{
+									{
+										Children: nil,
+										Value:    "test2",
+										Type:     TypeText,
+									},
+								},
+								Value: "*",
+								Type:  TypeAny,
+							},
+						},
+						Value: "test1",
+						Type:  TypeText,
+					},
+				},
+			},
+		},
+		{
+			input: "*",
+			output: &Node{
+				Type:  TypeRoot,
+				Value: "",
 				Children: []*Node{
 					{
 						Children: nil,
@@ -29,44 +83,20 @@ func TestParser(t *testing.T) {
 						Type:     TypeAny,
 					},
 				},
-				Value: "test",
-				Type:  TypeText,
-			},
-		},
-		{
-			input: "test1*test2",
-			output: &Node{
-				Children: []*Node{
-					{
-						Children: []*Node{
-							{
-								Children: nil,
-								Value:    "test2",
-								Type:     TypeText,
-							},
-						},
-						Value: "*",
-						Type:  TypeAny,
-					},
-				},
-				Value: "test1",
-				Type:  TypeText,
-			},
-		},
-		{
-			input: "*",
-			output: &Node{
-				Children: nil,
-				Value:    "*",
-				Type:     TypeAny,
 			},
 		},
 		{
 			input: "",
 			output: &Node{
-				Children: nil,
-				Value:    "",
-				Type:     TypeText,
+				Type:  TypeRoot,
+				Value: "",
+				Children: []*Node{
+					{
+						Children: nil,
+						Value:    "",
+						Type:     TypeText,
+					},
+				},
 			},
 		},
 	}
