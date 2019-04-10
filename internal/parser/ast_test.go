@@ -9,10 +9,12 @@ import (
 
 func TestParser(t *testing.T) {
 	tests := []struct {
+		name   string
 		input  string
 		output *Node
 	}{
 		{
+			name:  "test1",
 			input: "test",
 			output: &Node{
 				Type:  TypeRoot,
@@ -24,11 +26,13 @@ func TestParser(t *testing.T) {
 						Value:    "test",
 						Type:     TypeText,
 						Leaf:     true,
+						Name:     []string{"test1"},
 					},
 				},
 			},
 		},
 		{
+			name:  "test2",
 			input: "test*",
 			output: &Node{
 				Type:  TypeRoot,
@@ -45,6 +49,7 @@ func TestParser(t *testing.T) {
 								Value:    "*",
 								Type:     TypeAny,
 								Leaf:     true,
+								Name:     []string{"test2"},
 							},
 						},
 					},
@@ -52,6 +57,7 @@ func TestParser(t *testing.T) {
 			},
 		},
 		{
+			name:  "testIII",
 			input: "test1*test2",
 			output: &Node{
 				Type:  TypeRoot,
@@ -72,6 +78,7 @@ func TestParser(t *testing.T) {
 										Value:    "test2",
 										Type:     TypeText,
 										Leaf:     true,
+										Name:     []string{"testIII"},
 										Children: nil,
 									},
 								},
@@ -82,6 +89,7 @@ func TestParser(t *testing.T) {
 			},
 		},
 		{
+			name:  "testiv",
 			input: "*",
 			output: &Node{
 				Type:  TypeRoot,
@@ -93,11 +101,13 @@ func TestParser(t *testing.T) {
 						Value:    "*",
 						Leaf:     true,
 						Type:     TypeAny,
+						Name:     []string{"testiv"},
 					},
 				},
 			},
 		},
 		{
+			name:  "testfive",
 			input: "",
 			output: &Node{
 				Type:  TypeRoot,
@@ -109,6 +119,7 @@ func TestParser(t *testing.T) {
 						Value:    "",
 						Leaf:     true,
 						Type:     TypeText,
+						Name:     []string{"testfive"},
 					},
 				},
 			},
@@ -119,11 +130,11 @@ func TestParser(t *testing.T) {
 		t.Run(test.input, func(t *testing.T) {
 			require := r.New(t)
 
-			output := Parse(test.input)
+			output := Parse(test.name, test.input)
 
 			require.Equal(test.output, output)
 
-			//require.Equal(test.input, output.String())
+			require.Equal(test.input, output.String())
 		})
 	}
 }
@@ -149,12 +160,14 @@ func TestMerge(t *testing.T) {
 						Value:    "test",
 						Type:     TypeText,
 						Leaf:     true,
+						Name:     []string{"0"},
 					},
 					{
 						Children: nil,
 						Value:    "test2",
 						Type:     TypeText,
 						Leaf:     true,
+						Name:     []string{"1"},
 					},
 				},
 			},
@@ -177,12 +190,14 @@ func TestMerge(t *testing.T) {
 								Value: "*",
 								Type:  TypeAny,
 								Leaf:  true,
+								Name:  []string{"0"},
 								Children: []*Node{
 									{
 										Children: nil,
 										Value:    "2",
 										Type:     TypeText,
 										Leaf:     true,
+										Name:     []string{"1"},
 									},
 								},
 							},
@@ -193,8 +208,8 @@ func TestMerge(t *testing.T) {
 		},
 		{
 			inputs: []string{
-				"a",
 				"a*b",
+				"a",
 			},
 			outputString: "a*b",
 			output: &Node{
@@ -205,6 +220,7 @@ func TestMerge(t *testing.T) {
 						Value: "a",
 						Type:  TypeText,
 						Leaf:  true,
+						Name:  []string{"1"},
 						Children: []*Node{
 							{
 								Value: "*",
@@ -215,6 +231,7 @@ func TestMerge(t *testing.T) {
 										Value:    "b",
 										Type:     TypeText,
 										Leaf:     true,
+										Name:     []string{"0"},
 									},
 								},
 							},
@@ -242,12 +259,14 @@ func TestMerge(t *testing.T) {
 								Type:     TypeText,
 								Children: nil,
 								Leaf:     true,
+								Name:     []string{"0"},
 							},
 							{
 								Value:    "b",
 								Type:     TypeText,
 								Children: nil,
 								Leaf:     true,
+								Name:     []string{"1"},
 							},
 						},
 					},
@@ -261,8 +280,8 @@ func TestMerge(t *testing.T) {
 			require := r.New(t)
 
 			outputs := make([]*Node, 0)
-			for _, input := range test.inputs {
-				outputs = append(outputs, Parse(input))
+			for inputNum, input := range test.inputs {
+				outputs = append(outputs, Parse(fmt.Sprint(inputNum), input))
 			}
 
 			fmt.Println(outputs)
@@ -272,7 +291,7 @@ func TestMerge(t *testing.T) {
 			}
 
 			require.Equal(test.output, final)
-			//require.Equal(test.outputString, final.String())
+			require.Equal(test.outputString, final.String())
 		})
 	}
 }

@@ -22,10 +22,10 @@ func (m *Builder) AddPattern(name, pattern string) error {
 }
 
 func (m *Builder) MustAddPattern(name, pattern string) {
-	m.patterns[name] = parser.Parse(pattern)
+	m.patterns[name] = parser.Parse(name, pattern)
 }
 
-func (m *Builder) Compile() (MultiGlob, error){
+func (m *Builder) Compile() (MultiGlob, error) {
 	return m.MustCompile(), nil
 }
 
@@ -48,20 +48,32 @@ type MultiGlob struct {
 	node *parser.Node
 }
 
-func (mg *MultiGlob) Match(rawInput string) bool {
-	return match(mg.node, rawInput, false)
+func (mg *MultiGlob) Match(input string) bool {
+	_, matched := match(mg.node, input, false, false)
+	return matched
 }
 
-func match(node *parser.Node, input string, any bool) bool {
+// Returns a list containing all patterns that matched this input
+func (mg *MultiGlob) FindAllPatterns(input string) []string {
+	results, _ := match(mg.node, input, false, true)
+	return results
+}
+
+func match(node *parser.Node, input string, any, exhaustive bool) ([]string, bool) {
 	var (
 		childInput string
 		childAny   bool
+		results    []string
 	)
 
 	switch node.Type {
 	case parser.TypeAny:
 		if node.Leaf {
-			return true
+			if !exhaustive {
+				return node.Name, true
+			} else {
+				results = merge(results, node.Name)
+			}
 		}
 
 		childInput = input
@@ -70,13 +82,21 @@ func match(node *parser.Node, input string, any bool) bool {
 	case parser.TypeText:
 		if any {
 			if node.Leaf && strings.HasSuffix(input, node.Value) {
-				return true
+				if !exhaustive {
+					return node.Name, true
+				} else {
+					results = merge(results, node.Name)
+				}
 			} else if i := strings.Index(input, node.Value); i < 0 {
-				return false
+				return nil, false
 			} else {
 				trunc := input[i+len(node.Value):]
-				if match(node, trunc, true) {
-					return true
+				if r, ok := match(node, trunc, true, exhaustive); ok {
+					if !exhaustive {
+						return r, true
+					} else {
+						results = merge(results, node.Name)
+					}
 				}
 
 				childInput = trunc
@@ -84,9 +104,13 @@ func match(node *parser.Node, input string, any bool) bool {
 			}
 		} else {
 			if node.Leaf && node.Value == input {
-				return true
+				if !exhaustive {
+					return node.Name, true
+				} else {
+					results = merge(results, node.Name)
+				}
 			} else if !strings.HasPrefix(input, node.Value) {
-				return false
+				return nil, false
 			}
 
 			trunc := input[len(node.Value):]
@@ -100,9 +124,24 @@ func match(node *parser.Node, input string, any bool) bool {
 	}
 
 	for _, c := range node.Children {
-		if match(c, childInput, childAny) {
-			return true
+		sl, ok := match(c, childInput, childAny, exhaustive)
+		if ok {
+			if exhaustive {
+				results = merge(results, sl)
+			} else {
+				return sl, true
+			}
 		}
 	}
-	return false
+	return results, len(results) != 0
+}
+
+func merge(sl1, sl2 []string) []string {
+	if sl2 == nil {
+		return sl1
+	} else if sl1 == nil {
+		return sl2
+	} else {
+		return append(sl1, sl2...)
+	}
 }

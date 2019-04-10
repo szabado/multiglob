@@ -19,6 +19,7 @@ type Node struct {
 	Value    string
 	Children []*Node
 	Leaf     bool
+	Name     []string // Only valid on leaf nodes. List of names of patterns terminate that on this leaf node
 }
 
 func (n *Node) String() string {
@@ -101,17 +102,28 @@ func (n *Node) merge(n2 *Node) *Node {
 		Type:     n.Type,
 		Value:    n.Value,
 		Leaf:     n.Leaf || n2.Leaf,
+		Name:     mergeNames(n, n2),
 	}
 }
 
-func parse(l *lexer) *Node {
+func mergeNames(n1, n2 *Node) []string {
+	if n1.Leaf && n2.Leaf {
+		return append(n1.Name, n2.Name...)
+	} else if n1.Leaf {
+		return n1.Name
+	} else {
+		return n2.Name
+	}
+}
+
+func parse(name string, l *lexer) *Node {
 	if !l.Next() {
 		return nil
 	}
 
 	token := l.Scan()
 
-	child := parse(l)
+	child := parse(name, l)
 
 	children := []*Node{
 		child,
@@ -121,11 +133,18 @@ func parse(l *lexer) *Node {
 		children = nil
 	}
 
+	leaf := children == nil
+	var nameSl []string
+	if leaf {
+		nameSl = []string{name}
+	}
+
 	return &Node{
 		Children: children,
 		Type:     getNodeType(token.kind),
 		Value:    token.value,
-		Leaf:     children == nil,
+		Leaf:     leaf,
+		Name:     nameSl,
 	}
 }
 
@@ -142,10 +161,10 @@ func getNodeType(tokenType lexerTokenType) NodeType {
 	}
 }
 
-func Parse(input string) *Node {
+func Parse(name, input string) *Node {
 	root := newRootNode(nil)
 
-	if n := parse(NewLexer(input)); n != nil {
+	if n := parse(name, NewLexer(input)); n != nil {
 		root.Children = []*Node{n}
 	} else {
 		root.Children = []*Node{
@@ -154,6 +173,7 @@ func Parse(input string) *Node {
 				Value:    "",
 				Type:     TypeText,
 				Leaf:     true,
+				Name:     []string{name},
 			},
 		}
 	}

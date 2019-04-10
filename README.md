@@ -35,13 +35,13 @@ $ go test -bench=. .
 goos: darwin
 goarch: amd64
 pkg: github.com/szabado/multiglob
-BenchmarkRegex-12               	    3000	    385154 ns/op	      12 B/op	       0 allocs/op
-BenchmarkGlob-12                	   50000	     29401 ns/op	       0 B/op	       0 allocs/op
-BenchmarkMultiGlob-12           	50000000	        29.1 ns/op	       0 B/op	       0 allocs/op
-BenchmarkBuilderParseGlob-12    	    1000	   1120589 ns/op	 1664596 B/op	   20889 allocs/op
-BenchmarkParseGlob-12           	     500	   2490767 ns/op	 1555203 B/op	   39288 allocs/op
+BenchmarkMatchRegex-12        	    3000	    382638 ns/op	      12 B/op	       0 allocs/op
+BenchmarkMatchGlob-12         	   50000	     28709 ns/op	       0 B/op	       0 allocs/op
+BenchmarkMatchMultiGlob-12    	 3000000	       435 ns/op	       0 B/op	       0 allocs/op
+BenchmarkParseGlob-12         	     500	   2509470 ns/op	 1555204 B/op	   39288 allocs/op
+BenchmarkParseMultiGlob-12    	    1000	   1280321 ns/op	 1854440 B/op	   22924 allocs/op
 PASS
-ok  	github.com/szabado/multiglob	7.324s
+ok  	github.com/szabado/multiglob	7.724s
 ```
 
 Glob is referring to [github.com/gobwas/glob](https://github.com/gobwas/glob), which I
