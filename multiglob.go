@@ -17,19 +17,18 @@ func New() *Builder {
 }
 
 func (m *Builder) AddPattern(name, pattern string) error {
-	m.MustAddPattern(name, pattern)
+	m.patterns[name] = parser.Parse(name, pattern)
 	return nil
 }
 
 func (m *Builder) MustAddPattern(name, pattern string) {
-	m.patterns[name] = parser.Parse(name, pattern)
+	err := m.AddPattern(name, pattern)
+	if err != nil {
+		panic(err)
+	}
 }
 
 func (m *Builder) Compile() (MultiGlob, error) {
-	return m.MustCompile(), nil
-}
-
-func (m *Builder) MustCompile() MultiGlob {
 	var final *parser.Node
 	for _, p := range m.patterns {
 		if final == nil {
@@ -41,7 +40,15 @@ func (m *Builder) MustCompile() MultiGlob {
 
 	return MultiGlob{
 		node: final,
+	}, nil
+}
+
+func (m *Builder) MustCompile() MultiGlob {
+	mg, err := m.Compile()
+	if err != nil {
+		panic(err)
 	}
+	return mg
 }
 
 type MultiGlob struct {
