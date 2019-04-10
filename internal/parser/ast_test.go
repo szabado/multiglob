@@ -14,53 +14,59 @@ func TestParser(t *testing.T) {
 		{
 			input: "test",
 			output: &Node{
-				Child:nil,
-				Value:"test",
-				Type:TypeText,
+				Children: nil,
+				Value:    "test",
+				Type:     TypeText,
 			},
 		},
 		{
 			input: "test*",
 			output: &Node{
-				Child:&Node{
-					Child: nil,
-					Value: "*",
-					Type: TypeAny,
+				Children: []*Node{
+					{
+						Children: nil,
+						Value:    "*",
+						Type:     TypeAny,
+					},
 				},
-				Value:"test",
-				Type:TypeText,
+				Value: "test",
+				Type:  TypeText,
 			},
 		},
 		{
 			input: "test1*test2",
 			output: &Node{
-				Child:&Node{
-					Child: &Node{
-						Child: nil,
-						Value: "test2",
-						Type: TypeText,
+				Children: []*Node{
+					{
+						Children: []*Node{
+							{
+								Children: nil,
+								Value:    "test2",
+								Type:     TypeText,
+							},
+						},
+						Value: "*",
+						Type:  TypeAny,
 					},
-					Value: "*",
-					Type: TypeAny,
 				},
-				Value:"test1",
-				Type:TypeText,
+				Value: "test1",
+				Type:  TypeText,
 			},
 		},
 		{
 			input: "*",
 			output: &Node{
-				Child: nil,
-				Value:"*",
-				Type:TypeAny,
+				Children: nil,
+				Value:    "*",
+				Type:     TypeAny,
 			},
 		},
 		{
-			input:  "",
+			input: "",
 			output: &Node{
-				Child: nil,
-				Value: "",
-				Type: TypeText,
+				Children: nil,
+				Value:    "",
+				Type:     TypeText,
 			},
 		},
 	}

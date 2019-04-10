@@ -12,9 +12,9 @@ const (
 )
 
 type Node struct {
-	Type  NodeType
-	Value string
-	Child  *Node
+	Type     NodeType
+	Value    string
+	Children []*Node
 }
 
 func newNode(t NodeType) *Node {
@@ -34,7 +34,8 @@ func newNode(t NodeType) *Node {
 }
 
 func (n *Node) String() string {
-	return fmt.Sprintf("%s%s", n.Value, n.Child)
+	// TODO: Fix this
+	return fmt.Sprintf("%s%s", n.Value, n.Children)
 }
 
 func parse(l *lexer) *Node {
@@ -44,10 +45,20 @@ func parse(l *lexer) *Node {
 
 	token := l.Scan()
 
+	child := parse(l)
+
+	children := []*Node{
+		child,
+	}
+
+	if child == nil {
+		children = nil
+	}
+
 	return &Node{
-		Child:parse(l),
-		Type: getNodeType(token.kind),
-		Value:token.value,
+		Children: children,
+		Type:     getNodeType(token.kind),
+		Value:    token.value,
 	}
 }
 
@@ -68,9 +79,9 @@ func Parse(input string) *Node {
 	n := parse(newLexer(input))
 	if n == nil {
 		n = &Node{
-			Value:"",
-			Type:TypeText,
-			Child:nil,
+			Value:    "",
+			Type:     TypeText,
+			Children: nil,
 		}
 	}
 	return n

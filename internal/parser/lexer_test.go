@@ -15,8 +15,8 @@ func TestLexer(t *testing.T) {
 			input: "test",
 			output: []*token{
 				{
-					value:"test",
-					kind: text,
+					value: "test",
+					kind:  text,
 				},
 			},
 		},
@@ -25,11 +25,11 @@ func TestLexer(t *testing.T) {
 			output: []*token{
 				{
 					value: "test",
-					kind: text,
+					kind:  text,
 				},
 				{
 					value: "*",
-					kind: wildcard,
+					kind:  wildcard,
 				},
 			},
 		},
@@ -38,15 +38,15 @@ func TestLexer(t *testing.T) {
 			output: []*token{
 				{
 					value: "test1",
-					kind: text,
+					kind:  text,
 				},
 				{
 					value: "*",
-					kind: wildcard,
+					kind:  wildcard,
 				},
 				{
 					value: "test2",
-					kind: text,
+					kind:  text,
 				},
 			},
 		},
@@ -55,7 +55,7 @@ func TestLexer(t *testing.T) {
 			output: []*token{
 				{
 					value: "*",
-					kind: wildcard,
+					kind:  wildcard,
 				},
 			},
 		},

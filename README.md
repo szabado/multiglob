@@ -9,10 +9,11 @@ This uses a Radix tree under the hood and aims pretty darn fast.
 
 ```
 func main() {
-    mg := multiglob.New()
-    mg.Add("foo", "foo*")
-    mg.Add("bar", "bar*")
-    mg.Build()
+    mgb := multiglob.New()
+    mgb.AddPattern("foo", "foo*")
+    mgb.AddPattern("bar", "bar*")
+
+    mg := mgb.Build()
 
     mg.Match("football", func(name string) {
         fmt.Printf("I matched: %s\n", name)

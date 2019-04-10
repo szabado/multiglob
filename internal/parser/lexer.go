@@ -46,8 +46,8 @@ func (l *lexer) Next() bool {
 			l.source.Next()
 		}
 		l.current = &token{
-			 value: string(r),
-			 kind: wildcard,
+			value: string(r),
+			kind:  wildcard,
 		}
 
 	case text:
@@ -60,16 +60,16 @@ func (l *lexer) Next() bool {
 
 		l.current = &token{
 			value: value.String(),
-			kind: text,
+			kind:  text,
 		}
 
 	default:
 		fallthrough
 	case eof:
 		l.finished = true
-		l.current = &token {
+		l.current = &token{
 			value: "",
-			kind: eof,
+			kind:  eof,
 		}
 	}
 
@@ -88,6 +88,6 @@ func getTokenType(r rune) lexerTokenType {
 }
 
 type token struct {
-	 value string
-	 kind lexerTokenType
+	value string
+	kind  lexerTokenType
 }
