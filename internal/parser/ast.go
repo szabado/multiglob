@@ -59,8 +59,6 @@ func (n *Node) canMerge(n2 *Node) bool {
 		// Do nothing, Root nodes can always merge
 	case TypeAny:
 		// Do nothing, Any nodes can always merge
-	default:
-		panic("wut")
 	case TypeText:
 		return n.Value == n2.Value
 	}
@@ -154,10 +152,8 @@ func getNodeType(tokenType lexerTokenType) NodeType {
 		return TypeAny
 	case LexerText:
 		return TypeText
-	case LexerEOF:
-		fallthrough
 	default:
-		panic("this should never happen")
+		return NodeType(-1)
 	}
 }
 

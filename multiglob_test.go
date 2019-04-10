@@ -221,3 +221,58 @@ func TestFindAllPatterns(t *testing.T) {
 		})
 	}
 }
+
+func TestUnglob(t *testing.T) {
+	tests := []struct {
+		pattern string
+		input   string
+		output  []string
+	}{
+		{
+			pattern: "t*",
+			input:   "test",
+			output: []string{
+				"est",
+			},
+		},
+		{
+			pattern: "*t",
+			input:   "prat",
+			output: []string{
+				"pra",
+			},
+		},
+		{
+			pattern: "*",
+			input:   "foo",
+			output: []string{
+				"foo",
+			},
+		},
+		{
+			pattern: "f*b*",
+			input:   "foobar",
+			output: []string{
+				"oo",
+				"ar",
+			},
+		},
+		{
+			pattern: "**",
+			input:   "barfoo",
+			output: []string{
+				"barfoo",
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.input, func(t *testing.T) {
+			require := r.New(t)
+
+			ast := parser.Parse(test.pattern, test.pattern)
+
+			require.Equal(test.output, unglob(test.input, ast))
+		})
+	}
+}
