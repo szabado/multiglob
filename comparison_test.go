@@ -41,6 +41,21 @@ func BenchmarkGlob(b *testing.B) {
 	}
 }
 
+func BenchmarkMultiGlob(b *testing.B) {
+	builder := multiglob.New()
+	for _, s := range globPatterns {
+		builder.AddPattern(s, s)
+	}
+
+	matcher := builder.Build()
+
+	b.ResetTimer()
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		matcher.Match(testPattern)
+	}
+}
+
 func BenchmarkBuilderParseGlob(b *testing.B) {
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {

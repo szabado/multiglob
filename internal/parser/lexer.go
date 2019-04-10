@@ -13,9 +13,9 @@ const (
 type lexerTokenType int
 
 const (
-	eof lexerTokenType = iota
-	wildcard
-	text
+	LexerEOF lexerTokenType = iota
+	LexerWildcard
+	LexerText
 )
 
 type lexer struct {
@@ -24,7 +24,7 @@ type lexer struct {
 	current  *token
 }
 
-func newLexer(source string) *lexer {
+func NewLexer(source string) *lexer {
 	var sc scanner.Scanner
 
 	l := &lexer{
@@ -41,35 +41,35 @@ func (l *lexer) Scan() *token {
 
 func (l *lexer) Next() bool {
 	switch r := l.source.Next(); getTokenType(r) {
-	case wildcard:
-		for getTokenType(l.source.Peek()) == wildcard {
+	case LexerWildcard:
+		for getTokenType(l.source.Peek()) == LexerWildcard {
 			l.source.Next()
 		}
 		l.current = &token{
 			value: string(r),
-			kind:  wildcard,
+			kind:  LexerWildcard,
 		}
 
-	case text:
+	case LexerText:
 		var value bytes.Buffer
 		value.WriteRune(r)
 
-		for getTokenType(l.source.Peek()) == text {
+		for getTokenType(l.source.Peek()) == LexerText {
 			value.WriteRune(l.source.Next())
 		}
 
 		l.current = &token{
 			value: value.String(),
-			kind:  text,
+			kind:  LexerText,
 		}
 
 	default:
 		fallthrough
-	case eof:
+	case LexerEOF:
 		l.finished = true
 		l.current = &token{
 			value: "",
-			kind:  eof,
+			kind:  LexerEOF,
 		}
 	}
 
@@ -79,11 +79,11 @@ func (l *lexer) Next() bool {
 func getTokenType(r rune) lexerTokenType {
 	switch r {
 	case wildcardRune:
-		return wildcard
+		return LexerWildcard
 	case scanner.EOF:
-		return eof
+		return LexerEOF
 	default:
-		return text
+		return LexerText
 	}
 }
 

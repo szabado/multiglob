@@ -131,11 +131,11 @@ func parse(l *lexer) *Node {
 
 func getNodeType(tokenType lexerTokenType) NodeType {
 	switch tokenType {
-	case wildcard:
+	case LexerWildcard:
 		return TypeAny
-	case text:
+	case LexerText:
 		return TypeText
-	case eof:
+	case LexerEOF:
 		fallthrough
 	default:
 		panic("this should never happen")
@@ -145,7 +145,7 @@ func getNodeType(tokenType lexerTokenType) NodeType {
 func Parse(input string) *Node {
 	root := newRootNode(nil)
 
-	if n := parse(newLexer(input)); n != nil {
+	if n := parse(NewLexer(input)); n != nil {
 		root.Children = []*Node{n}
 	} else {
 		root.Children = []*Node{
