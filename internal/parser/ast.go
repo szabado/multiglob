@@ -18,6 +18,7 @@ type Node struct {
 	Type     NodeType
 	Value    string
 	Children []*Node
+	Leaf     bool
 }
 
 func (n *Node) String() string {
@@ -44,10 +45,6 @@ func (n *Node) String() string {
 }
 
 func (n *Node) canMerge(n2 *Node) bool {
-	if n == nil && n2 == nil {
-		panic("wut")
-	}
-
 	if n == nil || n2 == nil {
 		return true
 	}
@@ -70,27 +67,14 @@ func (n *Node) canMerge(n2 *Node) bool {
 }
 
 func (n *Node) merge(n2 *Node) *Node {
-	if n == nil && n2 == nil {
-		panic("wut")
-	}
-
 	if n == nil {
 		return n2
 	} else if n2 == nil {
 		return n
 	}
 
-	if n.Type != n2.Type {
-		// TODO: remove this
-		panic("wut")
-	}
-
 	children := make([]*Node, len(n.Children))
 
-	fmt.Printf("%#v\n", n.Children)
-	fmt.Printf("%#v\n", n2.Children)
-	fmt.Println(n.Children)
-	fmt.Println(n2.Children)
 	copy(children, n.Children)
 	children = append(children, n2.Children...)
 
@@ -101,7 +85,6 @@ func (n *Node) merge(n2 *Node) *Node {
 			if !child1.canMerge(child2) {
 				continue
 			}
-			fmt.Println("changing array", children)
 
 			if j+1 >= len(children) {
 				children = children[:j]
@@ -109,18 +92,15 @@ func (n *Node) merge(n2 *Node) *Node {
 				children = append(children[:j], children[j+1:]...)
 			}
 
-			fmt.Println("changed array", children)
-			fmt.Println("Merging ", child1, child2)
 			children[i] = child1.merge(child2)
-			fmt.Println("Post merge: ", children[i])
 		}
 	}
-	fmt.Println("final: ", children)
 
 	return &Node{
 		Children: children,
 		Type:     n.Type,
 		Value:    n.Value,
+		Leaf:     n.Leaf || n2.Leaf,
 	}
 }
 
@@ -145,6 +125,7 @@ func parse(l *lexer) *Node {
 		Children: children,
 		Type:     getNodeType(token.kind),
 		Value:    token.value,
+		Leaf:     children == nil,
 	}
 }
 
@@ -172,6 +153,7 @@ func Parse(input string) *Node {
 				Children: nil,
 				Value:    "",
 				Type:     TypeText,
+				Leaf:     true,
 			},
 		}
 	}
@@ -183,6 +165,7 @@ func newRootNode(children []*Node) *Node {
 		Value:    "",
 		Type:     TypeRoot,
 		Children: children,
+		Leaf:     false,
 	}
 }
 

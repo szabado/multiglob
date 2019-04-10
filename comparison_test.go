@@ -5,6 +5,8 @@ import (
 	"testing"
 
 	"github.com/gobwas/glob"
+
+	"github.com/szabado/multiglob"
 )
 
 const testPattern = "i am a test subject and not a fruit!"
@@ -35,6 +37,28 @@ func BenchmarkGlob(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		for _, g := range globs {
 			g.Match(testPattern)
+		}
+	}
+}
+
+func BenchmarkBuilderParseGlob(b *testing.B) {
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		b.StopTimer()
+		builder := multiglob.New()
+		b.StartTimer()
+
+		for _, pattern := range globPatterns {
+			builder.AddPattern(pattern, pattern)
+		}
+	}
+}
+
+func BenchmarkParseGlob(b *testing.B) {
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		for _, pattern := range globPatterns {
+			glob.Compile(pattern)
 		}
 	}
 }
