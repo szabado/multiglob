@@ -1,8 +1,9 @@
 package multiglob
 
 import (
-	"github.com/szabado/multiglob/internal/parser"
 	"strings"
+
+	"github.com/szabado/multiglob/internal/parser"
 )
 
 type Builder struct {
@@ -39,94 +40,66 @@ type MultiGlob struct {
 }
 
 func (mg *MultiGlob) Match(rawInput string) bool {
-	stack := stack{
-		sl: make([]frame, 0),
-	}
+	return match(mg.node, rawInput, false)
+}
 
-	stack.pushChildren(mg.node, rawInput, false)
+func match(node *parser.Node, input string, any bool) bool {
+	var childInput string
+	var childAny bool
+	switch node.Type {
+	case parser.TypeAny:
+		if node.Leaf {
+			//fmt.Println("any leaf node")
+			return true
+		} else {
+			//fmt.Println("any node. Adding children")
 
-	for !stack.empty() {
-		f := stack.pop()
-
-		//fmt.Println("frame: ", f.input, f.any, f.n)
-		switch f.n.Type {
-		case parser.TypeAny:
-			if f.n.Leaf {
-				//fmt.Println("any leaf node")
+			childInput = input
+			childAny = true
+		}
+	case parser.TypeText:
+		//fmt.Println("text type")
+		if any {
+			//fmt.Println("following an any")
+			if node.Leaf && strings.HasSuffix(input, node.Value) {
 				return true
-			} else {
-				//fmt.Println("any node. Adding children")
-				stack.pushChildren(f.n, f.input, true)
+			} else if i := strings.Index(input, node.Value); i >= 0 {
+				trunc := input[i+len(node.Value):]
+				if match(node, trunc, true) {
+					return true
+				}
+
+				childInput = trunc
+				childAny = false
 			}
-		case parser.TypeText:
-			//fmt.Println("text type")
-			if f.any {
-				//fmt.Println("following an any")
-				if f.n.Leaf && strings.HasSuffix(f.input, f.n.Value) {
+		} else {
+			//fmt.Println("direct matching")
+			//fmt.Println(input, " ", node.Value)
+			if node.Leaf && node.Value == input {
+				//fmt.Println("leaf matches")
+				return true
+			} else if strings.HasPrefix(input, node.Value) {
+				trunc := input[len(node.Value):]
+
+				if match(node, trunc, true) {
 					return true
-				} else if i := strings.Index(f.input, f.n.Value); i >= 0 {
-					trunc := f.input[i+len(f.n.Value):]
-					stack.push(frame{
-						input: trunc,
-						any:   true,
-						n:     f.n,
-					})
-					stack.pushChildren(f.n, trunc, false)
 				}
-			} else {
-				//fmt.Println("direct matching")
-				if f.n.Leaf && f.n.Value == f.input {
-					return true
-				} else if strings.HasPrefix(f.input, f.n.Value) {
-					trunc := f.input[len(f.n.Value):]
-					stack.push(frame{
-						input: trunc,
-						any:   true,
-						n:     f.n,
-					})
-					stack.pushChildren(f.n, trunc, false)
-				}
+
+				childAny = false
+				childInput = trunc
 			}
 		}
+	case parser.TypeRoot:
+		fallthrough
+	default:
+		childInput = input
+		childAny = any
 	}
 
+	for _, c := range node.Children {
+		if match(c, childInput, childAny) {
+			return true
+		}
+	}
 	return false
-}
-
-type frame struct {
-	n     *parser.Node
-	input string
-	any   bool
-}
-
-type stack struct {
-	sl []frame
-}
-
-func (s *stack) pop() frame {
-	i := len(s.sl) - 1
-	n := s.sl[i]
-	s.sl = s.sl[:i]
-	return n
-}
-
-func (s *stack) empty() bool {
-	return len(s.sl) == 0
-}
-
-func (s *stack) push(frames ...frame) {
-	//fmt.Println(frames)
-	for _, n := range frames {
-		s.sl = append(s.sl, n)
-	}
-}
-
-func (s *stack) pushChildren(n *parser.Node, input string, any bool) {
-	for _, c := range n.Children {
-		s.push(frame{
-			input: input,
-			n:     c,
-			any:   any,
-		})
-	}
 }

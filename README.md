@@ -8,8 +8,7 @@ This uses a Radix tree under the hood and aims pretty darn fast.
 ## Use Case
 
 
-
-## Theorized usage:
+## Usage:
 
 ```
 func main() {
@@ -29,43 +28,27 @@ func main() {
 
 The lazy way you can do what multiglob does is loop over the patterns and do whatever 
 you want when it matches. That's _sloooow_, so I wanted to make a better way. On my 
-dinky old 2015 laptop, running `comparison_test.go` gives me the following output:
+laptop, running `comparison_test.go` gives me the following output:
 
 ```
-$ go test . -bench=.                                                                                                                                                                                                          [0]
-goos: linux
+$ go test -bench=. .
+goos: darwin
 goarch: amd64
 pkg: github.com/szabado/multiglob
-BenchmarkRegex-4   	    2000	    622554 ns/op	   13855 B/op	       3 allocs/op
-BenchmarkGlob-4    	   50000	     38622 ns/op	       0 B/op	       0 allocs/op
+BenchmarkRegex-12               	    3000	    385154 ns/op	      12 B/op	       0 allocs/op
+BenchmarkGlob-12                	   50000	     29401 ns/op	       0 B/op	       0 allocs/op
+BenchmarkMultiGlob-12           	50000000	        29.1 ns/op	       0 B/op	       0 allocs/op
+BenchmarkBuilderParseGlob-12    	    1000	   1120589 ns/op	 1664596 B/op	   20889 allocs/op
+BenchmarkParseGlob-12           	     500	   2490767 ns/op	 1555203 B/op	   39288 allocs/op
 PASS
-ok  	github.com/szabado/multiglob	3.686s
+ok  	github.com/szabado/multiglob	7.324s
 ```
 
-Glob is referring to [github.com/gobwas/glob](https://github.com/gobwas/glob), which I took some inspiration from.
+Glob is referring to [github.com/gobwas/glob](https://github.com/gobwas/glob), which I
+took some inspiration from.
 
-Glob is already _way_ faster than using a Regex. Let's set a modest goal for multiglob: less than 20,000 ns/op,
-and no allocs.
-
-### (Rough) Results
-
-```
-go test . -bench=.                                                                                                                                                                                                          [0]
-goos: linux
-goarch: amd64
-pkg: github.com/szabado/multiglob
-BenchmarkRegex-4              	    3000	    535890 ns/op	      12 B/op	       0 allocs/op
-BenchmarkGlob-4               	   30000	     41002 ns/op	       0 B/op	       0 allocs/op
-BenchmarkMultiGlob-4          	 1000000	      1735 ns/op	    2016 B/op	       6 allocs/op
-BenchmarkBuilderParseGlob-4   	    1000	   1572638 ns/op	 1664586 B/op	   20889 allocs/op
-BenchmarkParseGlob-4          	     500	   3601170 ns/op	 1555202 B/op	   39288 allocs/op
-PASS
-ok  	github.com/szabado/multiglob	9.036s
-```
-
-HAHA! That's quite the savings. Pretty quality work for 3am. Now to figure out if that actually works on
-more complex test cases. Crazy what having way less functionality will do for you, innit? The allocs should
-also be dealt with, memory thrashing ain't good.
+Glob is already _way_ faster than using a Regex. MultiGlob is _way_ faster than doing
+using glob naively.
 
 ## Isn't this basically an http router??
 
