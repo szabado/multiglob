@@ -6,21 +6,25 @@ import (
 	"github.com/szabado/multiglob/internal/parser"
 )
 
+// Builder builds a MultiGlob.
 type Builder struct {
 	patterns map[string]*parser.Node
 }
 
+// New returns a new Builder that can be used to create a MultiGlob.
 func New() *Builder {
 	return &Builder{
 		patterns: make(map[string]*parser.Node),
 	}
 }
 
+// AddPattern adds the provided pattern to the builder and parses it.
 func (m *Builder) AddPattern(name, pattern string) error {
 	m.patterns[name] = parser.Parse(name, pattern)
 	return nil
 }
 
+// MustAddPattern wraps AddPattern, and panics if there is an error.
 func (m *Builder) MustAddPattern(name, pattern string) {
 	err := m.AddPattern(name, pattern)
 	if err != nil {
@@ -28,6 +32,7 @@ func (m *Builder) MustAddPattern(name, pattern string) {
 	}
 }
 
+// Compile merges all the compiled patterns into one MultiGlob and returns it.
 func (m *Builder) Compile() (MultiGlob, error) {
 	var final *parser.Node
 	for _, p := range m.patterns {
@@ -43,6 +48,7 @@ func (m *Builder) Compile() (MultiGlob, error) {
 	}, nil
 }
 
+// MustCompile wraps Compile, and panics if there is an error.
 func (m *Builder) MustCompile() MultiGlob {
 	mg, err := m.Compile()
 	if err != nil {
@@ -51,16 +57,18 @@ func (m *Builder) MustCompile() MultiGlob {
 	return mg
 }
 
+// MultiGlob is a matcher that is built from a collection of patterns. See Builder.
 type MultiGlob struct {
 	node *parser.Node
 }
 
+// Match determines if any pattern matches the provided string.
 func (mg *MultiGlob) Match(input string) bool {
 	_, matched := match(mg.node, input, false, false)
 	return matched
 }
 
-// Returns a list containing all patterns that matched this input
+// FindAllPatterns returns a list containing all patterns that matched this input.
 func (mg *MultiGlob) FindAllPatterns(input string) []string {
 	results, _ := match(mg.node, input, false, true)
 	return results
