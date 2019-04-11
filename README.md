@@ -1,5 +1,9 @@
 # multiglob: matching multiple wildcard based patterns 
 
+[![Build Status](https://travis-ci.com/szabado/multiglob.svg?branch=master)](https://travis-ci.com/szabado/multiglob)
+[![codecov](https://codecov.io/gh/szabado/multiglob/branch/master/graph/badge.svg)](https://codecov.io/gh/szabado/multiglob)
+[![Go Report Card](https://goreportcard.com/badge/github.com/szabado/multiglob)](https://goreportcard.com/report/github.com/szabado/multiglob)
+
 Inspired by a problem I encountered at work, this matches a string against a list of patterns and tells you which
 one it matched against!
 
