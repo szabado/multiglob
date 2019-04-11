@@ -8,7 +8,7 @@
 Inspired by a problem I encountered at work, this matches a string against a list of patterns and tells you which
 one it matched against!
 
-This uses a Radix tree under the hood and aims pretty darn fast.
+This uses a Radix tree under the hood and aims to be pretty darn fast.
 
 ## Usage:
 
