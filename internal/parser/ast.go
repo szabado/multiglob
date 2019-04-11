@@ -72,10 +72,13 @@ func (n *Node) merge(n2 *Node) *Node {
 		return n
 	}
 
-	children := make([]*Node, len(n.Children))
+	var children []*Node
+	if len(n.Children) + len(n2.Children) != 0 {
+		children = make([]*Node, len(n.Children))
 
-	copy(children, n.Children)
-	children = append(children, n2.Children...)
+		copy(children, n.Children)
+		children = append(children, n2.Children...)
+	}
 
 	for i := 0; i < len(children); i++ {
 		for j := i + 1; j < len(children); j++ {

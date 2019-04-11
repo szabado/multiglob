@@ -63,6 +63,15 @@ func TestLexer(t *testing.T) {
 			input:  "",
 			output: []*token{},
 		},
+		{
+			input:  "*****",
+			output: []*token{
+				{
+					value: "*",
+					kind: LexerWildcard,
+				},
+			},
+		},
 	}
 
 	for _, test := range tests {

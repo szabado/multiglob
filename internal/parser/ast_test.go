@@ -273,6 +273,73 @@ func TestMerge(t *testing.T) {
 				},
 			},
 		},
+		{
+			inputs: []string{
+				"test",
+				"test",
+			},
+			outputString: "test",
+			output: &Node{
+				Value: "",
+				Type:  TypeRoot,
+				Children: []*Node{
+					{
+						Children: nil,
+						Value:    "test",
+						Type:     TypeText,
+						Leaf:     true,
+						Name:     []string{"0", "1"},
+					},
+				},
+			},
+		},
+		{
+			inputs: []string{
+				"*",
+				"*",
+			},
+			outputString: "*",
+			output: &Node{
+				Value: "",
+				Type:  TypeRoot,
+				Children: []*Node{
+					{
+						Children: nil,
+						Value:    "*",
+						Type:     TypeAny,
+						Leaf:     true,
+						Name:     []string{"0", "1"},
+					},
+				},
+			},
+		},
+		{
+			inputs: []string{
+				"a",
+				"*",
+			},
+			outputString: "(a|*)",
+			output: &Node{
+				Value: "",
+				Type:  TypeRoot,
+				Children: []*Node{
+					{
+						Children: nil,
+						Value:    "a",
+						Type:     TypeText,
+						Leaf:     true,
+						Name:     []string{"0"},
+					},
+					{
+						Children: nil,
+						Value:    "*",
+						Type:     TypeAny,
+						Leaf:     true,
+						Name:     []string{"1"},
+					},
+				},
+			},
+		},
 	}
 
 	for i, test := range tests {
@@ -294,4 +361,36 @@ func TestMerge(t *testing.T) {
 			require.Equal(test.outputString, final.String())
 		})
 	}
+}
+
+func TestMultipleMerges(t *testing.T) {
+	require := r.New(t)
+
+	astA := Parse("A", "a")
+	//astA := Parse("b", "b")
+	astC := Parse("C", "c")
+
+	ast := Merge(astA, astC)
+	ast = Merge(astA, ast)
+
+	require.Equal(&Node{
+		Value: "",
+		Type:  TypeRoot,
+		Children: []*Node{
+			{
+				Children: nil,
+				Value:    "a",
+				Type:     TypeText,
+				Leaf:     true,
+				Name:     []string{"A", "A"},
+			},
+			{
+				Children: nil,
+				Value:    "c",
+				Type:     TypeText,
+				Leaf:     true,
+				Name:     []string{"C"},
+			},
+		},
+	}, ast)
 }

@@ -53,7 +53,6 @@ func (m *Builder) MustCompile() MultiGlob {
 
 type MultiGlob struct {
 	node     *parser.Node
-	patterns map[string]*parser.Node
 }
 
 func (mg *MultiGlob) Match(input string) bool {
@@ -65,18 +64,6 @@ func (mg *MultiGlob) Match(input string) bool {
 func (mg *MultiGlob) FindAllPatterns(input string) []string {
 	results, _ := match(mg.node, input, false, true)
 	return results
-}
-
-// FindAllGlobs returns a list of values globbed from all the pattern matched
-func (mg *MultiGlob) FindAllGlobs(input string) [][]string {
-	var globs [][]string
-
-	results, _ := match(mg.node, input, false, true)
-	for _, r := range results {
-		globs = append(globs, unglob(input, mg.patterns[r]))
-	}
-
-	return globs
 }
 
 func match(node *parser.Node, input string, any, exhaustive bool) ([]string, bool) {
@@ -164,33 +151,4 @@ func merge(sl1, sl2 []string) []string {
 	} else {
 		return append(sl1, sl2...)
 	}
-}
-
-// unglob parses the globs from the string, assuming it "matches" the
-// AST passed in according to match
-func unglob(input string, node *parser.Node) []string {
-	var globs []string
-	for node != nil {
-		switch node.Type {
-		case parser.TypeAny:
-			if node.Leaf {
-				globs = append(globs, input)
-			} else {
-				// Figure out where the next snippet starts
-				i := strings.Index(input, node.Children[0].Value)
-				globs = append(globs, input[:i])
-				input = input[i:]
-			}
-
-		case parser.TypeText:
-			input = strings.TrimPrefix(input, node.Value)
-		default:
-		}
-		if node.Leaf {
-			node = nil
-		} else {
-			node = node.Children[0]
-		}
-	}
-	return globs
 }
