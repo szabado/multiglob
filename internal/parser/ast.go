@@ -73,7 +73,7 @@ func (n *Node) merge(n2 *Node) *Node {
 	}
 
 	var children []*Node
-	if len(n.Children) + len(n2.Children) != 0 {
+	if len(n.Children)+len(n2.Children) != 0 {
 		children = make([]*Node, len(n.Children))
 
 		copy(children, n.Children)

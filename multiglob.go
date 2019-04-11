@@ -52,7 +52,7 @@ func (m *Builder) MustCompile() MultiGlob {
 }
 
 type MultiGlob struct {
-	node     *parser.Node
+	node *parser.Node
 }
 
 func (mg *MultiGlob) Match(input string) bool {

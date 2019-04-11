@@ -64,11 +64,11 @@ func TestLexer(t *testing.T) {
 			output: []*token{},
 		},
 		{
-			input:  "*****",
+			input: "*****",
 			output: []*token{
 				{
 					value: "*",
-					kind: LexerWildcard,
+					kind:  LexerWildcard,
 				},
 			},
 		},

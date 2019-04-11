@@ -9,11 +9,27 @@ import (
 	"github.com/szabado/multiglob"
 )
 
-const testPattern = "i am a test subject and not a fruit!"
+const (
+	regex    = "the.*quick.*fox jumps.*the.*g"
+	wildcard = "the*quick*fox jumps*the*g"
+)
 
-func BenchmarkMatchRegex(b *testing.B) {
-	regexes := make([]*regexp.Regexp, 0, len(regexPatterns))
-	for _, s := range regexPatterns {
+const (
+	fixture = `the the the the the the the the the the the the the quick quick quick quick quick quick quick quick quick quick quick quick quick brown brown brown brown brown brown brown brown brown brown brown brown brown fox fox fox fox fox fox fox fox fox fox fox fox fox jumps jumps jumps jumps jumps jumps jumps jumps jumps jumps jumps jumps jumps over over over over over over over over over over over over over the the the the the the the the the the the the the lazy lazy lazy lazy lazy lazy lazy lazy lazy lazy lazy lazy lazy dog dog dog dog dog dog dog dog dog dog dog dog dog`
+)
+
+const (
+	numRepititions = 720
+)
+
+const (
+	notFruitPattern = "i am a test subject and not a fruit!"
+	fruitPattern    = "ELDERBERRY,APPLE,GRAPEFRUIT,FIG,CHERRY,BANANA,DATE"
+)
+
+func BenchmarkMultiMatchRegex(b *testing.B) {
+	regexes := make([]*regexp.Regexp, 0, len(regexFruitPatterns))
+	for _, s := range regexFruitPatterns {
 		regexes = append(regexes, regexp.MustCompile(s))
 	}
 
@@ -21,14 +37,14 @@ func BenchmarkMatchRegex(b *testing.B) {
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
 		for _, re := range regexes {
-			re.MatchString(testPattern)
+			re.MatchString(fruitPattern)
 		}
 	}
 }
 
-func BenchmarkMatchGlob(b *testing.B) {
-	globs := make([]glob.Glob, 0, len(globPatterns))
-	for _, s := range globPatterns {
+func BenchmarkMultiMatchGlob(b *testing.B) {
+	globs := make([]glob.Glob, 0, len(globFruitPatterns))
+	for _, s := range globFruitPatterns {
 		globs = append(globs, glob.MustCompile(s))
 	}
 
@@ -36,14 +52,14 @@ func BenchmarkMatchGlob(b *testing.B) {
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
 		for _, g := range globs {
-			g.Match(testPattern)
+			g.Match(fruitPattern)
 		}
 	}
 }
 
-func BenchmarkMatchMultiGlob(b *testing.B) {
+func BenchmarkMultiMatchMultiGlob(b *testing.B) {
 	builder := multiglob.New()
-	for _, s := range globPatterns {
+	for _, s := range globFruitPatterns {
 		builder.MustAddPattern(s, s)
 	}
 
@@ -52,14 +68,110 @@ func BenchmarkMatchMultiGlob(b *testing.B) {
 	b.ResetTimer()
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
-		matcher.Match(testPattern)
+		matcher.Match(fruitPattern)
+	}
+}
+
+func BenchmarkMultiNotMatchRegex(b *testing.B) {
+	regexes := make([]*regexp.Regexp, 0, len(regexFruitPatterns))
+	for _, s := range regexFruitPatterns {
+		regexes = append(regexes, regexp.MustCompile(s))
+	}
+
+	b.ResetTimer()
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		for _, re := range regexes {
+			re.MatchString(notFruitPattern)
+		}
+	}
+}
+
+func BenchmarkMultiNotMatchGlob(b *testing.B) {
+	globs := make([]glob.Glob, 0, len(globFruitPatterns))
+	for _, s := range globFruitPatterns {
+		globs = append(globs, glob.MustCompile(s))
+	}
+
+	b.ResetTimer()
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		for _, g := range globs {
+			g.Match(notFruitPattern)
+		}
+	}
+}
+
+func BenchmarkMultiNotMatchMultiGlob(b *testing.B) {
+	builder := multiglob.New()
+	for _, s := range globFruitPatterns {
+		builder.MustAddPattern(s, s)
+	}
+
+	matcher := builder.MustCompile()
+
+	b.ResetTimer()
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		matcher.Match(notFruitPattern)
+	}
+}
+
+func BenchmarkSingleMatchRegex(b *testing.B) {
+	re := regexp.MustCompile(regex)
+	if !re.MatchString(fixture) {
+		b.Fatal("Regex should have matched")
+	}
+
+	b.ResetTimer()
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		re.MatchString(fixture)
+	}
+}
+
+func BenchmarkSingleMatchGlob(b *testing.B) {
+	gl := glob.MustCompile(wildcard)
+	if !gl.Match(fixture) {
+		b.Fatal("Glob should have matched")
+	}
+
+	b.ResetTimer()
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		gl.Match(fixture)
+	}
+}
+
+func BenchmarkSingleMatchMultiGlob(b *testing.B) {
+	builder := multiglob.New()
+	builder.MustAddPattern("pattern", fixture)
+
+	matcher := builder.MustCompile()
+	if !matcher.Match(fixture) {
+		b.Fatal("MultiGlob should have matched")
+	}
+
+	b.ResetTimer()
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		matcher.Match(fixture)
+	}
+}
+
+func BenchmarkParseRegex(b *testing.B) {
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		for _, pattern := range regexFruitPatterns {
+			regexp.MustCompile(pattern)
+		}
 	}
 }
 
 func BenchmarkParseGlob(b *testing.B) {
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
-		for _, pattern := range globPatterns {
+		for _, pattern := range globFruitPatterns {
 			glob.MustCompile(pattern)
 		}
 	}
@@ -72,15 +184,32 @@ func BenchmarkParseMultiGlob(b *testing.B) {
 		builder := multiglob.New()
 		b.StartTimer()
 
-		for _, pattern := range globPatterns {
+		for _, pattern := range globFruitPatterns {
 			builder.MustAddPattern(pattern, pattern)
 		}
 		builder.MustCompile()
 	}
 }
 
-// All permutations of apple, banana, cherry, date, and two wildcards
-var globPatterns = []string{
+func BenchmarkMultiGlobFindAllPatterns(b *testing.B) {
+	builder := multiglob.New()
+	for _, s := range globFruitPatterns {
+		builder.MustAddPattern(s, s)
+	}
+
+	matcher := builder.MustCompile()
+
+	//fmt.Println(matcher.FindAllPatterns(fruitPattern))
+
+	b.ResetTimer()
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		matcher.FindAllPatterns(fruitPattern)
+	}
+}
+
+// All permutations of apple, banana, cherry, date, and two wildcards (720)
+var globFruitPatterns = []string{
 	"APPLE,BANANA,CHERRY,*,*,*",
 	"BANANA,APPLE,CHERRY,*,*,*",
 	"CHERRY,APPLE,BANANA,*,*,*",
@@ -803,7 +932,7 @@ var globPatterns = []string{
 	"*,CHERRY,*,APPLE,BANANA,*",
 }
 
-var regexPatterns = []string{
+var regexFruitPatterns = []string{
 	"APPLE,BANANA,CHERRY,.*,.*,.*",
 	"BANANA,APPLE,CHERRY,.*,.*,.*",
 	"CHERRY,APPLE,BANANA,.*,.*,.*",
