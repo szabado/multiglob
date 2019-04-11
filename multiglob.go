@@ -78,9 +78,8 @@ func match(node *parser.Node, input string, any, exhaustive bool) ([]string, boo
 		if node.Leaf {
 			if !exhaustive {
 				return node.Name, true
-			} else {
-				results = merge(results, node.Name)
 			}
+			results = merge(results, node.Name)
 		}
 
 		childInput = input
@@ -91,9 +90,8 @@ func match(node *parser.Node, input string, any, exhaustive bool) ([]string, boo
 			if node.Leaf && strings.HasSuffix(input, node.Value) {
 				if !exhaustive {
 					return node.Name, true
-				} else {
-					results = merge(results, node.Name)
 				}
+				results = merge(results, node.Name)
 			} else if i := strings.Index(input, node.Value); i < 0 {
 				return nil, false
 			} else {
@@ -101,9 +99,8 @@ func match(node *parser.Node, input string, any, exhaustive bool) ([]string, boo
 				if r, ok := match(node, trunc, true, exhaustive); ok {
 					if !exhaustive {
 						return r, true
-					} else {
-						results = merge(results, node.Name)
 					}
+					results = merge(results, node.Name)
 				}
 
 				childInput = trunc
@@ -113,9 +110,8 @@ func match(node *parser.Node, input string, any, exhaustive bool) ([]string, boo
 			if node.Leaf && node.Value == input {
 				if !exhaustive {
 					return node.Name, true
-				} else {
-					results = merge(results, node.Name)
 				}
+				results = merge(results, node.Name)
 			} else if !strings.HasPrefix(input, node.Value) {
 				return nil, false
 			}
