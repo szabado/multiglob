@@ -10,10 +10,9 @@ go:
   - 1.12.x
 
 before_script:
-  - curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
-  - go mod vendor
-  - go generate
-  - go fmt -s ./...
+  - GO111MODULE=on go mod vendor
+  - GO111MODULE=on go generate
+  - GO111MODULE=on go fmt ./...
   - git add .
   - git diff --cached
   - git diff-index --cached --exit-code HEAD
