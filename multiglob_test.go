@@ -482,7 +482,7 @@ func TestFindGlobs(t *testing.T) {
 
 			mg := b.MustCompile()
 
-			name, matched, globs := mg.FindGlobs(test.input)
+			name, globs, matched := mg.FindGlobs(test.input)
 			if test.matched {
 				require.True(matched)
 				require.Equal(fmt.Sprint(i), name)

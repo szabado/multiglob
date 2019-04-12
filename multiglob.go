@@ -119,14 +119,14 @@ func (mg *MultiGlob) FindAllGlobs(input string) map[string][]string {
 //   Input:         "pen pineapple apple pen"
 //   Pattern Found: "*apple*"
 //   Globs:         ["pen pineapple ", " pen"]
-func (mg *MultiGlob) FindGlobs(input string) (name string, matched bool, globs []string) {
+func (mg *MultiGlob) FindGlobs(input string) (name string, globs []string, matched bool) {
 	name, ok := mg.FindPattern(input)
 	if !ok {
-		return "", false, nil
+		return "", nil, false
 	}
 
 	globs, _ = extractGlobs(input, mg.patterns[name])
-	return name, true, globs
+	return name, globs, true
 }
 
 // FindGlobsForPattern extracts the globs from input using the named pattern.
