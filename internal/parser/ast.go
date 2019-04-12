@@ -153,7 +153,7 @@ func parse(name string, l *lexer.Lexer) *Node {
 
 func getNodeType(tokenType lexer.LexerTokenType) NodeType {
 	switch tokenType {
-	case lexer.Wildcard:
+	case lexer.Asterisk:
 		return TypeAny
 	case lexer.Text:
 		return TypeText

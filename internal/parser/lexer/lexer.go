@@ -7,15 +7,22 @@ import (
 )
 
 const (
-	wildcardRune = '*'
+	asteriskRune = '*'
+	openBracketRune = '['
+	closeBracketRune = ']'
+	escapeRune = '\\'
+	dashRune = '-'
 )
 
 type LexerTokenType int
 
 const (
-	EOF LexerTokenType = iota
-	Wildcard
+	EOF       LexerTokenType = iota // Tokens less than EOF should never exit this package
+	Asterisk
 	Text
+	Bracket
+	Backslash
+	Dash
 )
 
 type Lexer struct {
@@ -41,13 +48,13 @@ func (l *Lexer) Scan() *Token {
 
 func (l *Lexer) Next() bool {
 	switch r := l.source.Next(); getTokenType(r) {
-	case Wildcard:
-		for getTokenType(l.source.Peek()) == Wildcard {
+	case Asterisk:
+		for getTokenType(l.source.Peek()) == Asterisk {
 			l.source.Next()
 		}
 		l.current = &Token{
 			Value: string(r),
-			Kind:  Wildcard,
+			Kind:  Asterisk,
 		}
 
 	case Text:
@@ -61,6 +68,11 @@ func (l *Lexer) Next() bool {
 		l.current = &Token{
 			Value: value.String(),
 			Kind:  Text,
+		}
+	case Bracket, Backslash, Dash:
+		l.current = &Token{
+			Value: string(r),
+			Kind: getTokenType(r),
 		}
 
 	default:
@@ -78,10 +90,16 @@ func (l *Lexer) Next() bool {
 
 func getTokenType(r rune) LexerTokenType {
 	switch r {
-	case wildcardRune:
-		return Wildcard
+	case asteriskRune:
+		return Asterisk
 	case scanner.EOF:
 		return EOF
+	case openBracketRune, closeBracketRune:
+		return Bracket
+	case escapeRune:
+		return Backslash
+	case dashRune:
+		return Dash
 	default:
 		return Text
 	}
