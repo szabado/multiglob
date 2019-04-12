@@ -3,6 +3,8 @@ package parser
 import (
 	"bytes"
 	"fmt"
+
+	"github.com/szabado/multiglob/internal/parser/lexer"
 )
 
 type NodeType int
@@ -117,7 +119,7 @@ func mergeNames(n1, n2 *Node) []string {
 	}
 }
 
-func parse(name string, l *lexer) *Node {
+func parse(name string, l *lexer.Lexer) *Node {
 	if !l.Next() {
 		return nil
 	}
@@ -142,18 +144,18 @@ func parse(name string, l *lexer) *Node {
 
 	return &Node{
 		Children: children,
-		Type:     getNodeType(token.kind),
-		Value:    token.value,
+		Type:     getNodeType(token.Kind),
+		Value:    token.Value,
 		Leaf:     leaf,
 		Name:     nameSl,
 	}
 }
 
-func getNodeType(tokenType lexerTokenType) NodeType {
+func getNodeType(tokenType lexer.LexerTokenType) NodeType {
 	switch tokenType {
-	case LexerWildcard:
+	case lexer.Wildcard:
 		return TypeAny
-	case LexerText:
+	case lexer.Text:
 		return TypeText
 	default:
 		return NodeType(-1)
@@ -163,7 +165,7 @@ func getNodeType(tokenType lexerTokenType) NodeType {
 func Parse(name, input string) *Node {
 	root := newRootNode(nil)
 
-	if n := parse(name, NewLexer(input)); n != nil {
+	if n := parse(name, lexer.New(input)); n != nil {
 		root.Children = []*Node{n}
 	} else {
 		root.Children = []*Node{

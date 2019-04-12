@@ -1,4 +1,4 @@
-package parser
+package lexer
 
 import (
 	"testing"
@@ -9,66 +9,66 @@ import (
 func TestLexer(t *testing.T) {
 	tests := []struct {
 		input  string
-		output []*token
+		output []*Token
 	}{
 		{
 			input: "test",
-			output: []*token{
+			output: []*Token{
 				{
-					value: "test",
-					kind:  LexerText,
+					Value: "test",
+					Kind:  Text,
 				},
 			},
 		},
 		{
 			input: "test*",
-			output: []*token{
+			output: []*Token{
 				{
-					value: "test",
-					kind:  LexerText,
+					Value: "test",
+					Kind:  Text,
 				},
 				{
-					value: "*",
-					kind:  LexerWildcard,
+					Value: "*",
+					Kind:  Wildcard,
 				},
 			},
 		},
 		{
 			input: "test1*test2",
-			output: []*token{
+			output: []*Token{
 				{
-					value: "test1",
-					kind:  LexerText,
+					Value: "test1",
+					Kind:  Text,
 				},
 				{
-					value: "*",
-					kind:  LexerWildcard,
+					Value: "*",
+					Kind:  Wildcard,
 				},
 				{
-					value: "test2",
-					kind:  LexerText,
+					Value: "test2",
+					Kind:  Text,
 				},
 			},
 		},
 		{
 			input: "*",
-			output: []*token{
+			output: []*Token{
 				{
-					value: "*",
-					kind:  LexerWildcard,
+					Value: "*",
+					Kind:  Wildcard,
 				},
 			},
 		},
 		{
 			input:  "",
-			output: []*token{},
+			output: []*Token{},
 		},
 		{
 			input: "*****",
-			output: []*token{
+			output: []*Token{
 				{
-					value: "*",
-					kind:  LexerWildcard,
+					Value: "*",
+					Kind:  Wildcard,
 				},
 			},
 		},
@@ -78,8 +78,8 @@ func TestLexer(t *testing.T) {
 		t.Run(test.input, func(t *testing.T) {
 			require := r.New(t)
 
-			output := make([]*token, 0)
-			l := NewLexer(test.input)
+			output := make([]*Token, 0)
+			l := New(test.input)
 
 			for l.Next() {
 				output = append(output, l.Scan())
