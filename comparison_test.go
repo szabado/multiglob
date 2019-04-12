@@ -208,6 +208,53 @@ func BenchmarkMultiGlobFindAllPatterns(b *testing.B) {
 	}
 }
 
+func BenchmarkMultiGlobFindPattern(b *testing.B) {
+	builder := multiglob.New()
+	for _, s := range globFruitPatterns {
+		builder.MustAddPattern(s, s)
+	}
+
+	matcher := builder.MustCompile()
+
+	//fmt.Println(matcher.FindAllPatterns(fruitPattern))
+
+	b.ResetTimer()
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		matcher.FindPattern(fruitPattern)
+	}
+}
+
+func BenchmarkMultiGlobFindAllGlobs(b *testing.B) {
+	builder := multiglob.New()
+	for _, s := range globFruitPatterns {
+		builder.MustAddPattern(s, s)
+	}
+
+	matcher := builder.MustCompile()
+
+	b.ResetTimer()
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		matcher.FindAllGlobs(fruitPattern)
+	}
+}
+
+func BenchmarkMultiGlobFindGlobs(b *testing.B) {
+	builder := multiglob.New()
+	for _, s := range globFruitPatterns {
+		builder.MustAddPattern(s, s)
+	}
+
+	matcher := builder.MustCompile()
+
+	b.ResetTimer()
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		matcher.FindGlobs(fruitPattern)
+	}
+}
+
 // All permutations of apple, banana, cherry, date, and two wildcards (720)
 var globFruitPatterns = []string{
 	"APPLE,BANANA,CHERRY,*,*,*",

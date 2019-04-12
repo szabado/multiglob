@@ -51,21 +51,24 @@ $ go test . -bench=.                                                            
 goos: linux
 goarch: amd64
 pkg: github.com/szabado/multiglob
-BenchmarkMultiMatchRegex-4            	    1000	   1263544 ns/op	      37 B/op	       0 allocs/op
-BenchmarkMultiMatchGlob-4             	   20000	     61713 ns/op	       0 B/op	       0 allocs/op
-BenchmarkMultiMatchMultiGlob-4        	  300000	      4317 ns/op	       0 B/op	       0 allocs/op
-BenchmarkMultiNotMatchRegex-4         	    3000	    542037 ns/op	      12 B/op	       0 allocs/op
-BenchmarkMultiNotMatchGlob-4          	   30000	     41217 ns/op	       0 B/op	       0 allocs/op
-BenchmarkMultiNotMatchMultiGlob-4     	 3000000	       603 ns/op	       0 B/op	       0 allocs/op
-BenchmarkSingleMatchRegex-4           	   50000	     32057 ns/op	       0 B/op	       0 allocs/op
+BenchmarkMultiMatchRegex-4            	    1000	   1260832 ns/op	      37 B/op	       0 allocs/op
+BenchmarkMultiMatchGlob-4             	   20000	     61867 ns/op	       0 B/op	       0 allocs/op
+BenchmarkMultiMatchMultiGlob-4        	 1000000	      4405 ns/op	       0 B/op	       0 allocs/op
+BenchmarkMultiNotMatchRegex-4         	    3000	    544801 ns/op	      12 B/op	       0 allocs/op
+BenchmarkMultiNotMatchGlob-4          	   30000	     41110 ns/op	       0 B/op	       0 allocs/op
+BenchmarkMultiNotMatchMultiGlob-4     	 3000000	       586 ns/op	       0 B/op	       0 allocs/op
+BenchmarkSingleMatchRegex-4           	   50000	     32161 ns/op	       0 B/op	       0 allocs/op
 BenchmarkSingleMatchGlob-4            	 5000000	       323 ns/op	       0 B/op	       0 allocs/op
-BenchmarkSingleMatchMultiGlob-4       	50000000	        29.1 ns/op	       0 B/op	       0 allocs/op
-BenchmarkParseRegex-4                 	     500	   3681185 ns/op	 3188165 B/op	   24300 allocs/op
-BenchmarkParseGlob-4                  	     500	   3640196 ns/op	 1555202 B/op	   39288 allocs/op
-BenchmarkParseMultiGlob-4             	    1000	   1917451 ns/op	 1854570 B/op	   22924 allocs/op
-BenchmarkMultiGlobFindAllPatterns-4   	  300000	      5405 ns/op	       0 B/op	       0 allocs/op
+BenchmarkSingleMatchMultiGlob-4       	50000000	        29.0 ns/op	       0 B/op	       0 allocs/op
+BenchmarkParseRegex-4                 	     500	   3645894 ns/op	 3188164 B/op	   24300 allocs/op
+BenchmarkParseGlob-4                  	     500	   3609843 ns/op	 1555202 B/op	   39288 allocs/op
+BenchmarkParseMultiGlob-4             	    1000	   2039323 ns/op	 1870861 B/op	   22935 allocs/op
+BenchmarkMultiGlobFindAllPatterns-4   	  300000	      5540 ns/op	       0 B/op	       0 allocs/op
+BenchmarkMultiGlobFindPattern-4       	  300000	      4826 ns/op	       0 B/op	       0 allocs/op
+BenchmarkMultiGlobFindAllGlobs-4      	  200000	      6327 ns/op	     528 B/op	       7 allocs/op
+BenchmarkMultiGlobFindGlobs-4         	  300000	      4838 ns/op	     128 B/op	       5 allocs/op
 PASS
-ok  	github.com/szabado/multiglob	23.991s
+ok  	github.com/szabado/multiglob	31.539s
 ```
 
 All the `Multi` benchmarks are matching one string across a bunch of patterns, and all the `Single` one are
