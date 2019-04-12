@@ -50,7 +50,7 @@ func (m *Builder) Compile() (MultiGlob, error) {
 	}
 
 	return MultiGlob{
-		node: final,
+		node:     final,
 		patterns: patterns,
 	}, nil
 }
@@ -66,7 +66,7 @@ func (m *Builder) MustCompile() MultiGlob {
 
 // MultiGlob is a matcher that is built from a collection of patterns. See Builder.
 type MultiGlob struct {
-	node *parser.Node
+	node     *parser.Node
 	patterns map[string]*parser.Node
 }
 

@@ -333,22 +333,22 @@ func TestExtractGlobs(t *testing.T) {
 		pattern string
 		input   string
 		output  []string
-		err bool
+		err     bool
 	}{
 		{
-			input: "test",
+			input:   "test",
 			pattern: "test",
-			output: []string{},
+			output:  []string{},
 		},
 		{
-			input: "foo",
+			input:   "foo",
 			pattern: "f*",
 			output: []string{
 				"oo",
 			},
 		},
 		{
-			input: "foobar",
+			input:   "foobar",
 			pattern: "*f*b*",
 			output: []string{
 				"",
@@ -357,7 +357,7 @@ func TestExtractGlobs(t *testing.T) {
 			},
 		},
 		{
-			input: "pen pineapple apple pen",
+			input:   "pen pineapple apple pen",
 			pattern: "*apple*",
 			output: []string{
 				"pen pineapple ",
@@ -365,28 +365,28 @@ func TestExtractGlobs(t *testing.T) {
 			},
 		},
 		{
-			input: "pen",
+			input:   "pen",
 			pattern: "foo",
-			output: nil,
-			err: true,
+			output:  nil,
+			err:     true,
 		},
 		{
-			input: "pineapple",
+			input:   "pineapple",
 			pattern: "*foo",
-			output: nil,
-			err: true,
+			output:  nil,
+			err:     true,
 		},
 		{
-			input: "apple",
+			input:   "apple",
 			pattern: "foo*",
-			output: nil,
-			err: true,
+			output:  nil,
+			err:     true,
 		},
 		{
-			input: "aba",
+			input:   "aba",
 			pattern: "a*a*a",
-			output: nil,
-			err: true,
+			output:  nil,
+			err:     true,
 		},
 	}
 
