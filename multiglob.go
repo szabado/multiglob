@@ -1,6 +1,7 @@
 package multiglob
 
 import (
+	"errors"
 	"strings"
 
 	"github.com/szabado/multiglob/internal/parser"
@@ -43,8 +44,14 @@ func (m *Builder) Compile() (MultiGlob, error) {
 		}
 	}
 
+	patterns := make(map[string]*parser.Node)
+	for k, v := range m.patterns {
+		patterns[k] = v
+	}
+
 	return MultiGlob{
 		node: final,
+		patterns: patterns,
 	}, nil
 }
 
@@ -60,6 +67,7 @@ func (m *Builder) MustCompile() MultiGlob {
 // MultiGlob is a matcher that is built from a collection of patterns. See Builder.
 type MultiGlob struct {
 	node *parser.Node
+	patterns map[string]*parser.Node
 }
 
 // Match determines if any pattern matches the provided string.
@@ -72,6 +80,130 @@ func (mg *MultiGlob) Match(input string) bool {
 func (mg *MultiGlob) FindAllPatterns(input string) []string {
 	results, _ := match(mg.node, input, false, true)
 	return results
+}
+
+// FindPattern returns one pattern out of the set of patterns that matches input.
+// There is no guarantee as to which of the patterns will be returned. Returns true
+// if a pattern was matched.
+func (mg *MultiGlob) FindPattern(input string) (string, bool) {
+	results, ok := match(mg.node, input, false, false)
+	if !ok || len(results) < 1 {
+		return "", false
+	}
+	return results[0], true
+}
+
+// FindAllGlobs returns a map of pattern names to globs extracted using each pattern.
+// It uses all the patterns returned FindAllPatterns. See FindGlobs for an explanation
+// of glob extraction.
+func (mg *MultiGlob) FindAllGlobs(input string) map[string][]string {
+	patternNames := mg.FindAllPatterns(input)
+
+	globs := make(map[string][]string)
+	for _, name := range patternNames {
+		g, _ := extractGlobs(input, mg.patterns[name])
+		globs[name] = g
+	}
+
+	return globs
+}
+
+// FindGlobs finds a matching pattern using FindPattern, and then extracts the globs
+// from the input based on that pattern. It also returns the name of the pattern
+// matched. This uses a greedy matching algorithm. For example:
+//
+//   Input:         "test"
+//   Pattern Found: "t*t"
+//   Globs:         ["es"]
+//
+//   Input:         "pen pineapple apple pen"
+//   Pattern Found: "*apple*"
+//   Globs:         ["pen pineapple ", " pen"]
+func (mg *MultiGlob) FindGlobs(input string) (name string, matched bool, globs []string) {
+	name, ok := mg.FindPattern(input)
+	if !ok {
+		return "", false, nil
+	}
+
+	globs, _ = extractGlobs(input, mg.patterns[name])
+	return name, true, globs
+}
+
+// FindGlobsForPattern extracts the globs from input using the named pattern.
+func (mg *MultiGlob) FindGlobsForPattern(input, name string) (globs []string, err error) {
+	if ast, ok := mg.patterns[name]; !ok {
+		return nil, errors.New("pattern not found")
+	} else {
+		globs, err := extractGlobs(input, ast)
+		if err != nil {
+			return nil, errors.New("pattern did not match input")
+		}
+		return globs, nil
+	}
+}
+
+var errTextNotFound = errors.New("text not found")
+
+// extractGlobs returns the globs based on the pattern. It either returns a nil error or
+// errTextNotFound
+func extractGlobs(input string, ast *parser.Node) ([]string, error) {
+	node := ast
+
+	// TODO: decrease allows by making this ceil(half the tree size)
+	globs := make([]string, 0)
+
+	leafConsumed := false
+	for !leafConsumed && node != nil {
+		switch node.Type {
+		case parser.TypeText:
+			if !strings.HasPrefix(input, node.Value) {
+				return nil, errTextNotFound
+			}
+			input = strings.TrimPrefix(input, node.Value)
+			if node.Leaf {
+				leafConsumed = true
+			}
+		case parser.TypeAny:
+			// It's globbing time, baby!
+			if node.Leaf {
+				globs = append(globs, input)
+				leafConsumed = true
+				break
+			}
+
+			for text := input; text != ""; {
+				child := node.Children[0]
+				// Consume as much as possible
+				globEnds := strings.LastIndex(text, child.Value)
+				if globEnds < 0 {
+					return nil, errTextNotFound
+				}
+
+				globbed := text[:globEnds]
+				text = globbed
+
+				subglobs, err := extractGlobs(input[globEnds:], child)
+				if err != nil {
+					continue
+				}
+
+				globs = append(globs, globbed)
+				globs = append(globs, subglobs...)
+				leafConsumed = true
+				break
+			}
+
+			if !leafConsumed {
+				return nil, errTextNotFound
+			}
+		}
+
+		if !node.Leaf {
+			node = node.Children[0]
+		}
+	}
+
+	return globs, nil
 }
 
 func match(node *parser.Node, input string, any, exhaustive bool) ([]string, bool) {
