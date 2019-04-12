@@ -147,59 +147,56 @@ var errTextNotFound = errors.New("text not found")
 // extractGlobs returns the globs based on the pattern. It either returns a nil error or
 // errTextNotFound
 func extractGlobs(input string, ast *parser.Node) ([]string, error) {
-	node := ast
-
 	// TODO: decrease allows by making this ceil(half the tree size)
 	globs := make([]string, 0)
 
-	leafConsumed := false
-	for !leafConsumed && node != nil {
-		switch node.Type {
+	for leafConsumed := false; !leafConsumed && ast != nil; {
+		switch ast.Type {
 		case parser.TypeText:
-			if !strings.HasPrefix(input, node.Value) {
+			if !strings.HasPrefix(input, ast.Value) {
 				return nil, errTextNotFound
 			}
-			input = strings.TrimPrefix(input, node.Value)
-			if node.Leaf {
+			input = strings.TrimPrefix(input, ast.Value)
+			if ast.Leaf {
 				leafConsumed = true
 			}
 		case parser.TypeAny:
 			// It's globbing time, baby!
-			if node.Leaf {
+			if ast.Leaf {
 				globs = append(globs, input)
 				leafConsumed = true
 				break
+			} else if input == "" {
+				return nil, errTextNotFound
 			}
 
-			for text := input; text != ""; {
-				child := node.Children[0]
-				// Consume as much as possible
-				globEnds := strings.LastIndex(text, child.Value)
+			// Consume as much as possible, and then slowly consume less until we find a
+			// match or can't consume any less
+			for globbed := input; globbed != ""; {
+				child := ast.Children[0]
+
+				globEnds := strings.LastIndex(globbed, child.Value)
 				if globEnds < 0 {
 					return nil, errTextNotFound
 				}
 
-				globbed := text[:globEnds]
-				text = globbed
+				globbed = globbed[:globEnds]
 
 				subglobs, err := extractGlobs(input[globEnds:], child)
 				if err != nil {
 					continue
 				}
 
+				// we found our match!
 				globs = append(globs, globbed)
 				globs = append(globs, subglobs...)
 				leafConsumed = true
 				break
 			}
-
-			if !leafConsumed {
-				return nil, errTextNotFound
-			}
 		}
 
-		if !node.Leaf {
-			node = node.Children[0]
+		if !ast.Leaf {
+			ast = ast.Children[0]
 		}
 	}
 
