@@ -1,6 +1,7 @@
 package multiglob
 
 import (
+	"fmt"
 	"sort"
 	"testing"
 
@@ -401,6 +402,179 @@ func TestExtractGlobs(t *testing.T) {
 				require.NoError(err)
 			}
 
+			require.Equal(test.output, output)
+		})
+	}
+}
+
+func TestFindGlobs(t *testing.T) {
+	tests := []struct {
+		pattern string
+		input   string
+		output  []string
+		matched bool
+	}{
+		{
+			input:   "test",
+			pattern: "test",
+			output:  []string{},
+			matched: true,
+		},
+		{
+			input:   "foo",
+			pattern: "f*",
+			output: []string{
+				"oo",
+			},
+			matched: true,
+		},
+		{
+			input:   "foobar",
+			pattern: "*f*b*",
+			output: []string{
+				"",
+				"oo",
+				"ar",
+			},
+			matched: true,
+		},
+		{
+			input:   "pen pineapple apple pen",
+			pattern: "*apple*",
+			output: []string{
+				"pen pineapple ",
+				" pen",
+			},
+			matched: true,
+		},
+		{
+			input:   "pen",
+			pattern: "foo",
+			output:  nil,
+			matched: false,
+		},
+		{
+			input:   "pineapple",
+			pattern: "*foo",
+			output:  nil,
+			matched: false,
+		},
+		{
+			input:   "apple",
+			pattern: "foo*",
+			output:  nil,
+			matched: false,
+		},
+		{
+			input:   "aba",
+			pattern: "a*a*a",
+			output:  nil,
+			matched: false,
+		},
+	}
+
+	for i, test := range tests {
+		t.Run(test.input, func(t *testing.T) {
+			require := r.New(t)
+
+			b := New()
+			b.MustAddPattern(fmt.Sprint(i), test.pattern)
+
+			mg := b.MustCompile()
+
+			name, matched, globs := mg.FindGlobs(test.input)
+			if test.matched {
+				require.True(matched)
+				require.Equal(fmt.Sprint(i), name)
+			} else {
+				require.False(matched)
+				require.Equal("", name)
+			}
+			require.Equal(test.output, globs)
+
+			globs, err := mg.FindGlobsForPattern(test.input, name)
+			if test.matched {
+				require.NoError(err)
+			} else {
+				require.Error(err)
+			}
+
+			require.Equal(test.output, globs)
+		})
+	}
+}
+
+func TestFindAllGlobs(t *testing.T) {
+	tests := []struct {
+		patterns map[string]string
+		input    string
+		output   map[string][]string
+	}{
+		{
+			input: "test",
+			patterns: map[string]string{
+				"a": "test",
+			},
+			output: map[string][]string{
+				"a": {},
+			},
+		},
+		{
+			input: "pen pineapple apple pen",
+			patterns: map[string]string{
+				"a": "*apple*",
+				"b": "*pen*",
+			},
+			output: map[string][]string{
+				"a": {
+					"pen pineapple ",
+					" pen",
+				},
+				"b": {
+					"pen pineapple apple ",
+					"",
+				},
+			},
+		},
+		{
+			input: "foobar",
+			patterns: map[string]string{
+				"a": "foo*",
+				"b": "*apple*",
+			},
+			output: map[string][]string{
+				"a": {
+					"bar",
+				},
+			},
+		},
+		{
+			input: "foo",
+			patterns: map[string]string{
+				"a": "*o",
+				"b": "foo",
+			},
+			output: map[string][]string{
+				"a": {
+					"fo",
+				},
+				"b": {},
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.input, func(t *testing.T) {
+			require := r.New(t)
+
+			b := New()
+			for name, pattern := range test.patterns {
+				b.MustAddPattern(name, pattern)
+			}
+
+			mg := b.MustCompile()
+
+			output := mg.FindAllGlobs(test.input)
 			require.Equal(test.output, output)
 		})
 	}
