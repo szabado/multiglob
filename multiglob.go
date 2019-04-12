@@ -34,7 +34,7 @@ func (m *Builder) MustAddPattern(name, pattern string) {
 }
 
 // Compile merges all the compiled patterns into one MultiGlob and returns it.
-func (m *Builder) Compile() (MultiGlob, error) {
+func (m *Builder) Compile() (*MultiGlob, error) {
 	var final *parser.Node
 	for _, p := range m.patterns {
 		if final == nil {
@@ -49,14 +49,14 @@ func (m *Builder) Compile() (MultiGlob, error) {
 		patterns[k] = v
 	}
 
-	return MultiGlob{
+	return &MultiGlob{
 		node:     final,
 		patterns: patterns,
 	}, nil
 }
 
 // MustCompile wraps Compile, and panics if there is an error.
-func (m *Builder) MustCompile() MultiGlob {
+func (m *Builder) MustCompile() *MultiGlob {
 	mg, err := m.Compile()
 	if err != nil {
 		panic(err)
