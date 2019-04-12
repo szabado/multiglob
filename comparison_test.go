@@ -255,6 +255,26 @@ func BenchmarkMultiGlobFindGlobs(b *testing.B) {
 	}
 }
 
+func BenchmarkMultiGlobFindGlobsForPattern(b *testing.B) {
+	builder := multiglob.New()
+	for _, s := range globFruitPatterns {
+		builder.MustAddPattern(s, s)
+	}
+
+	matcher := builder.MustCompile()
+
+	pattern, ok := matcher.FindPattern(fruitPattern)
+	if !ok {
+		b.FailNow()
+	}
+
+	b.ResetTimer()
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		matcher.FindGlobsForPattern(fruitPattern, pattern)
+	}
+}
+
 // All permutations of apple, banana, cherry, date, and two wildcards (720)
 var globFruitPatterns = []string{
 	"APPLE,BANANA,CHERRY,*,*,*",

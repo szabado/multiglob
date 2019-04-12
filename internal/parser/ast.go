@@ -74,7 +74,7 @@ func (n *Node) merge(n2 *Node) *Node {
 
 	var children []*Node
 	if len(n.Children)+len(n2.Children) != 0 {
-		children = make([]*Node, len(n.Children))
+		children = make([]*Node, len(n.Children), len(n.Children)+len(n2.Children))
 
 		copy(children, n.Children)
 		children = append(children, n2.Children...)
@@ -126,12 +126,12 @@ func parse(name string, l *lexer) *Node {
 
 	child := parse(name, l)
 
-	children := []*Node{
-		child,
-	}
+	var children []*Node
 
-	if child == nil {
-		children = nil
+	if child != nil {
+		children = []*Node{
+			child,
+		}
 	}
 
 	leaf := children == nil
