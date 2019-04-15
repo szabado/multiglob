@@ -130,11 +130,465 @@ func TestParser(t *testing.T) {
 		t.Run(test.input, func(t *testing.T) {
 			require := r.New(t)
 
-			output := Parse(test.name, test.input)
+			output, err := Parse(test.name, test.input)
+			require.NoError(err)
 
 			require.Equal(test.output, output)
+		})
+	}
+}
 
-			require.Equal(test.input, output.String())
+func TestParseRanges(t *testing.T) {
+	tests := []struct {
+		name   string
+		input  string
+		output *Node
+		err    bool
+	}{
+		{
+			name:  "test",
+			input: "[abc]",
+			output: &Node{
+				Type:  TypeRoot,
+				Value: "",
+				Leaf:  false,
+				Children: []*Node{
+					{
+						Children: nil,
+						Value:    "",
+						Type:     TypeRange,
+						Leaf:     true,
+						Name:     []string{"test"},
+						Range: &Range{
+							CharList: "abc",
+						},
+					},
+				},
+			},
+		},
+		{
+			name:  "test",
+			input: "[^abc]",
+			output: &Node{
+				Type:  TypeRoot,
+				Value: "",
+				Leaf:  false,
+				Children: []*Node{
+					{
+						Children: nil,
+						Value:    "",
+						Type:     TypeRange,
+						Leaf:     true,
+						Name:     []string{"test"},
+						Range: &Range{
+							CharList: "abc",
+							Inverse:  true,
+						},
+					},
+				},
+			},
+		},
+		{
+			name:  "test",
+			input: "[a-c]",
+			output: &Node{
+				Type:  TypeRoot,
+				Value: "",
+				Leaf:  false,
+				Children: []*Node{
+					{
+						Children: nil,
+						Value:    "",
+						Type:     TypeRange,
+						Leaf:     true,
+						Name:     []string{"test"},
+						Range: &Range{
+							Bounds: []*Bounds{
+								{
+									Low:  rune('a'),
+									High: rune('c'),
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name:  "test",
+			input: "[^a-c]",
+			output: &Node{
+				Type:  TypeRoot,
+				Value: "",
+				Leaf:  false,
+				Children: []*Node{
+					{
+						Children: nil,
+						Value:    "",
+						Type:     TypeRange,
+						Leaf:     true,
+						Name:     []string{"test"},
+						Range: &Range{
+							Inverse: true,
+							Bounds: []*Bounds{
+								{
+									Low:  rune('a'),
+									High: rune('c'),
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name:  "test",
+			input: "[ab-c]",
+			output: &Node{
+				Type:  TypeRoot,
+				Value: "",
+				Leaf:  false,
+				Children: []*Node{
+					{
+						Children: nil,
+						Value:    "",
+						Type:     TypeRange,
+						Leaf:     true,
+						Name:     []string{"test"},
+						Range: &Range{
+							CharList: "a",
+							Bounds: []*Bounds{
+								{
+									Low:  rune('b'),
+									High: rune('c'),
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name:  "test",
+			input: "[^ab-c]",
+			output: &Node{
+				Type:  TypeRoot,
+				Value: "",
+				Leaf:  false,
+				Children: []*Node{
+					{
+						Children: nil,
+						Value:    "",
+						Type:     TypeRange,
+						Leaf:     true,
+						Name:     []string{"test"},
+						Range: &Range{
+							Inverse:  true,
+							CharList: "a",
+							Bounds: []*Bounds{
+								{
+									Low:  rune('b'),
+									High: rune('c'),
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name:   "test",
+			input:  "[a",
+			err:    true,
+			output: nil,
+		},
+		{
+			name:   "test",
+			input:  "[^a",
+			err:    true,
+			output: nil,
+		},
+		{
+			name:   "test",
+			input:  "[b-a]",
+			err:    true,
+			output: nil,
+		},
+		{
+			name:   "test",
+			input:  "[^b-a]",
+			err:    true,
+			output: nil,
+		},
+		{
+			name:  "test",
+			input: "]a",
+			output: &Node{
+				Type:  TypeRoot,
+				Value: "",
+				Leaf:  false,
+				Children: []*Node{
+					{
+						Children: nil,
+						Value:    "]a",
+						Type:     TypeText,
+						Leaf:     true,
+						Name:     []string{"test"},
+					},
+				},
+			},
+		},
+		{
+			name:  "test",
+			input: "[-]",
+			output: &Node{
+				Type:  TypeRoot,
+				Value: "",
+				Leaf:  false,
+				Children: []*Node{
+					{
+						Children: nil,
+						Value:    "",
+						Type:     TypeRange,
+						Leaf:     true,
+						Name:     []string{"test"},
+						Range: &Range{
+							CharList: "-",
+						},
+					},
+				},
+			},
+		},
+		{
+			name:  "test",
+			input: "[^-]",
+			output: &Node{
+				Type:  TypeRoot,
+				Value: "",
+				Leaf:  false,
+				Children: []*Node{
+					{
+						Children: nil,
+						Value:    "",
+						Type:     TypeRange,
+						Leaf:     true,
+						Name:     []string{"test"},
+						Range: &Range{
+							Inverse:  true,
+							CharList: "-",
+						},
+					},
+				},
+			},
+		},
+		{
+			name:   "test",
+			input:  "[a-]",
+			output: nil,
+			err:    true,
+		},
+		{
+			name:   "test",
+			input:  "[^a-]",
+			output: nil,
+			err:    true,
+		},
+		{
+			name:  "test",
+			input: "[]]",
+			output: &Node{
+				Type:  TypeRoot,
+				Value: "",
+				Leaf:  false,
+				Children: []*Node{
+					{
+						Children: nil,
+						Value:    "",
+						Type:     TypeRange,
+						Leaf:     true,
+						Name:     []string{"test"},
+						Range: &Range{
+							CharList: "]",
+						},
+					},
+				},
+			},
+		},
+		{
+			name:  "test",
+			input: "[^]]",
+			output: &Node{
+				Type:  TypeRoot,
+				Value: "",
+				Leaf:  false,
+				Children: []*Node{
+					{
+						Children: nil,
+						Value:    "",
+						Type:     TypeRange,
+						Leaf:     true,
+						Name:     []string{"test"},
+						Range: &Range{
+							Inverse:  true,
+							CharList: "]",
+						},
+					},
+				},
+			},
+		},
+		{
+			name:  "test",
+			input: "[ ]]",
+			output: &Node{
+				Type:  TypeRoot,
+				Value: "",
+				Leaf:  false,
+				Children: []*Node{
+					{
+						Value: "",
+						Type:  TypeRange,
+						Range: &Range{
+							CharList: " ",
+						},
+						Children: []*Node{
+							{
+								Leaf:  true,
+								Name:  []string{"test"},
+								Value: "]",
+								Type:  TypeText,
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name:  "test",
+			input: "[^ ]]",
+			output: &Node{
+				Type:  TypeRoot,
+				Value: "",
+				Leaf:  false,
+				Children: []*Node{
+					{
+						Value: "",
+						Type:  TypeRange,
+						Range: &Range{
+							Inverse:  true,
+							CharList: " ",
+						},
+						Children: []*Node{
+							{
+								Leaf:  true,
+								Name:  []string{"test"},
+								Value: "]",
+								Type:  TypeText,
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name:  "test",
+			input: "[[]",
+			output: &Node{
+				Type:  TypeRoot,
+				Value: "",
+				Leaf:  false,
+				Children: []*Node{
+					{
+						Children: nil,
+						Value:    "",
+						Type:     TypeRange,
+						Leaf:     true,
+						Name:     []string{"test"},
+						Range: &Range{
+							CharList: "[",
+						},
+					},
+				},
+			},
+		},
+		{
+			name:  "test",
+			input: "[^[]",
+			output: &Node{
+				Type:  TypeRoot,
+				Value: "",
+				Leaf:  false,
+				Children: []*Node{
+					{
+						Children: nil,
+						Value:    "",
+						Type:     TypeRange,
+						Leaf:     true,
+						Name:     []string{"test"},
+						Range: &Range{
+							Inverse:  true,
+							CharList: "[",
+						},
+					},
+				},
+			},
+		},
+		{
+			name:  "test",
+			input: "[ []",
+			output: &Node{
+				Type:  TypeRoot,
+				Value: "",
+				Leaf:  false,
+				Children: []*Node{
+					{
+						Value: "",
+						Type:  TypeRange,
+						Leaf:  true,
+						Name:  []string{"test"},
+						Range: &Range{
+							CharList: " [",
+						},
+						Children: nil,
+					},
+				},
+			},
+		},
+		{
+			name:  "test",
+			input: "[^ []",
+			output: &Node{
+				Type:  TypeRoot,
+				Value: "",
+				Leaf:  false,
+				Children: []*Node{
+					{
+						Value: "",
+						Type:  TypeRange,
+						Leaf:  true,
+						Name:  []string{"test"},
+						Range: &Range{
+							Inverse:  true,
+							CharList: " [",
+						},
+						Children: nil,
+					},
+				},
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.input, func(t *testing.T) {
+			require := r.New(t)
+
+			output, err := Parse(test.name, test.input)
+			if test.err {
+				require.Error(err)
+			} else {
+				require.NoError(err)
+			}
+
+			require.Equal(test.output, output)
 		})
 	}
 }
@@ -348,7 +802,9 @@ func TestMerge(t *testing.T) {
 
 			outputs := make([]*Node, 0)
 			for inputNum, input := range test.inputs {
-				outputs = append(outputs, Parse(fmt.Sprint(inputNum), input))
+				ast, err := Parse(fmt.Sprint(inputNum), input)
+				require.NoError(err)
+				outputs = append(outputs, ast)
 			}
 
 			fmt.Println(outputs)
@@ -358,7 +814,6 @@ func TestMerge(t *testing.T) {
 			}
 
 			require.Equal(test.output, final)
-			require.Equal(test.outputString, final.String())
 		})
 	}
 }
@@ -366,9 +821,11 @@ func TestMerge(t *testing.T) {
 func TestMultipleMerges(t *testing.T) {
 	require := r.New(t)
 
-	astA := Parse("A", "a")
+	astA, err := Parse("A", "a")
+	require.NoError(err)
 	//astA := Parse("b", "b")
-	astC := Parse("C", "c")
+	astC, err := Parse("C", "c")
+	require.NoError(err)
 
 	ast := Merge(astA, astC)
 	ast = Merge(astA, ast)
@@ -393,4 +850,140 @@ func TestMultipleMerges(t *testing.T) {
 			},
 		},
 	}, ast)
+}
+
+func TestCompress(t *testing.T) {
+	tests := []struct {
+		input  *Node
+		output *Node
+	}{
+		{
+			input: &Node{
+				Value: "",
+				Type:  TypeRoot,
+				Children: []*Node{
+					{
+						Value: "a",
+						Type:  TypeText,
+						Leaf:  true,
+						Name:  []string{"1"},
+						Children: []*Node{
+							{
+								Value: "a",
+								Type:  TypeText,
+								Leaf:  false,
+								Children: []*Node{
+									{
+										Value: "*",
+										Type:  TypeText,
+										Leaf:  true,
+										Name:  []string{"2"},
+										Children: []*Node{
+											{
+												Value: "*",
+												Type:  TypeAny,
+												Children: []*Node{
+													{
+														Children: nil,
+														Value:    "b",
+														Type:     TypeText,
+														Leaf:     true,
+														Name:     []string{"0"},
+													},
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			output: &Node{
+				Value: "",
+				Type:  TypeRoot,
+				Children: []*Node{
+					{
+						Value: "a",
+						Type:  TypeText,
+						Leaf:  true,
+						Name:  []string{"1"},
+						Children: []*Node{
+							{
+								Value: "a*",
+								Type:  TypeText,
+								Leaf:  true,
+								Name:  []string{"2"},
+								Children: []*Node{
+									{
+										Value: "*",
+										Type:  TypeAny,
+										Children: []*Node{
+											{
+												Children: nil,
+												Value:    "b",
+												Type:     TypeText,
+												Leaf:     true,
+												Name:     []string{"0"},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			input: &Node{
+				Value: "",
+				Type:  TypeRoot,
+				Children: []*Node{
+					{
+						Value: "a",
+						Type:  TypeText,
+						Children: []*Node{
+							{
+								Value: "a",
+								Type:  TypeText,
+								Children: []*Node{
+									{
+										Value:    "b",
+										Type:     TypeText,
+										Leaf:     true,
+										Name:     []string{"2"},
+										Children: nil,
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			output: &Node{
+				Value: "",
+				Type:  TypeRoot,
+				Children: []*Node{
+					{
+						Value:    "aab",
+						Type:     TypeText,
+						Leaf:     true,
+						Name:     []string{"2"},
+						Children: nil,
+					},
+				},
+			},
+		},
+	}
+
+	for i, test := range tests {
+		t.Run(fmt.Sprint(i), func(t *testing.T) {
+			require := r.New(t)
+
+			test.input.compress()
+			require.Equal(test.output, test.input)
+		})
+	}
 }

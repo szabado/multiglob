@@ -1,8 +1,9 @@
 package multiglob
 
 import (
-	"errors"
 	"strings"
+
+	"github.com/pkg/errors"
 
 	"github.com/szabado/multiglob/internal/parser"
 )
@@ -21,8 +22,12 @@ func New() *Builder {
 
 // AddPattern adds the provided pattern to the builder and parses it.
 func (m *Builder) AddPattern(name, pattern string) error {
-	m.patterns[name] = parser.Parse(name, pattern)
-	return nil
+	p, err := parser.Parse(name, pattern)
+	if err != nil {
+		return errors.Wrap(err, "failed to add pattern")
+	}
+	m.patterns[name] = p
+	return err
 }
 
 // MustAddPattern wraps AddPattern, and panics if there is an error.

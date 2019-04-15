@@ -15,8 +15,20 @@ func TestLexer(t *testing.T) {
 			input: "test",
 			output: []*Token{
 				{
-					Value: "test",
-					Kind:  Text,
+					Value: "t",
+					Type:  Text,
+				},
+				{
+					Value: "e",
+					Type:  Text,
+				},
+				{
+					Value: "s",
+					Type:  Text,
+				},
+				{
+					Value: "t",
+					Type:  Text,
 				},
 			},
 		},
@@ -24,12 +36,24 @@ func TestLexer(t *testing.T) {
 			input: "test*",
 			output: []*Token{
 				{
-					Value: "test",
-					Kind:  Text,
+					Value: "t",
+					Type:  Text,
+				},
+				{
+					Value: "e",
+					Type:  Text,
+				},
+				{
+					Value: "s",
+					Type:  Text,
+				},
+				{
+					Value: "t",
+					Type:  Text,
 				},
 				{
 					Value: "*",
-					Kind:  Asterisk,
+					Type:  Asterisk,
 				},
 			},
 		},
@@ -37,16 +61,48 @@ func TestLexer(t *testing.T) {
 			input: "test1*test2",
 			output: []*Token{
 				{
-					Value: "test1",
-					Kind:  Text,
+					Value: "t",
+					Type:  Text,
+				},
+				{
+					Value: "e",
+					Type:  Text,
+				},
+				{
+					Value: "s",
+					Type:  Text,
+				},
+				{
+					Value: "t",
+					Type:  Text,
+				},
+				{
+					Value: "1",
+					Type:  Text,
 				},
 				{
 					Value: "*",
-					Kind:  Asterisk,
+					Type:  Asterisk,
 				},
 				{
-					Value: "test2",
-					Kind:  Text,
+					Value: "t",
+					Type:  Text,
+				},
+				{
+					Value: "e",
+					Type:  Text,
+				},
+				{
+					Value: "s",
+					Type:  Text,
+				},
+				{
+					Value: "t",
+					Type:  Text,
+				},
+				{
+					Value: "2",
+					Type:  Text,
 				},
 			},
 		},
@@ -55,7 +111,7 @@ func TestLexer(t *testing.T) {
 			output: []*Token{
 				{
 					Value: "*",
-					Kind:  Asterisk,
+					Type:  Asterisk,
 				},
 			},
 		},
@@ -68,7 +124,7 @@ func TestLexer(t *testing.T) {
 			output: []*Token{
 				{
 					Value: "*",
-					Kind:  Asterisk,
+					Type:  Asterisk,
 				},
 			},
 		},
@@ -77,7 +133,7 @@ func TestLexer(t *testing.T) {
 			output: []*Token{
 				{
 					Value: `\`,
-					Kind:  Backslash,
+					Type:  Backslash,
 				},
 			},
 		},
@@ -86,7 +142,7 @@ func TestLexer(t *testing.T) {
 			output: []*Token{
 				{
 					Value: `-`,
-					Kind:  Dash,
+					Type:  Dash,
 				},
 			},
 		},
@@ -95,11 +151,11 @@ func TestLexer(t *testing.T) {
 			output: []*Token{
 				{
 					Value: `]`,
-					Kind:  Bracket,
+					Type:  Bracket,
 				},
 				{
 					Value: `[`,
-					Kind:  Bracket,
+					Type:  Bracket,
 				},
 			},
 		},

@@ -5,9 +5,9 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/szabado/multiglob/internal/parser"
-
 	r "github.com/stretchr/testify/require"
+
+	"github.com/szabado/multiglob/internal/parser"
 )
 
 func TestMatch(t *testing.T) {
@@ -142,7 +142,9 @@ func TestAddPattern(t *testing.T) {
 	b.MustAddPattern("test", "pattern")
 
 	require.Equal(1, len(b.patterns))
-	require.Equal(parser.Parse("test", "pattern"), b.patterns["test"])
+	ast, err := parser.Parse("test", "pattern")
+	require.NoError(err)
+	require.Equal(ast, b.patterns["test"])
 }
 
 func TestFindAllPatterns(t *testing.T) {
@@ -395,7 +397,10 @@ func TestExtractGlobs(t *testing.T) {
 		t.Run(test.input, func(t *testing.T) {
 			require := r.New(t)
 
-			output, err := extractGlobs(test.input, parser.Parse(test.pattern, test.pattern))
+			ast, err := parser.Parse(test.pattern, test.pattern)
+			require.NoError(err)
+
+			output, err := extractGlobs(test.input, ast)
 			if test.err {
 				require.Error(err)
 			} else {

@@ -1,28 +1,29 @@
 package lexer
 
 import (
-	"bytes"
 	"strings"
 	"text/scanner"
 )
 
 const (
-	asteriskRune = '*'
-	openBracketRune = '['
+	asteriskRune     = '*'
+	openBracketRune  = '['
 	closeBracketRune = ']'
-	escapeRune = '\\'
-	dashRune = '-'
+	escapeRune       = '\\'
+	dashRune         = '-'
+	caretRune        = '^'
 )
 
 type LexerTokenType int
 
 const (
-	EOF       LexerTokenType = iota // Tokens less than EOF should never exit this package
+	eof LexerTokenType = iota
 	Asterisk
 	Text
 	Bracket
 	Backslash
 	Dash
+	Caret
 )
 
 type Lexer struct {
@@ -54,46 +55,50 @@ func (l *Lexer) Next() bool {
 		}
 		l.current = &Token{
 			Value: string(r),
-			Kind:  Asterisk,
+			Type:  Asterisk,
 		}
 
 	case Text:
-		var value bytes.Buffer
-		value.WriteRune(r)
-
-		for getTokenType(l.source.Peek()) == Text {
-			value.WriteRune(l.source.Next())
-		}
-
-		l.current = &Token{
-			Value: value.String(),
-			Kind:  Text,
-		}
-	case Bracket, Backslash, Dash:
 		l.current = &Token{
 			Value: string(r),
-			Kind: getTokenType(r),
+			Type:  Text,
+		}
+	case Bracket, Backslash, Dash, Caret:
+		l.current = &Token{
+			Value: string(r),
+			Type:  getTokenType(r),
 		}
 
 	default:
 		fallthrough
-	case EOF:
+	case eof:
 		l.finished = true
 		l.current = &Token{
 			Value: "",
-			Kind:  EOF,
+			Type:  eof,
 		}
 	}
 
 	return !l.finished
 }
 
+// TODO: Test Peek
+func (l *Lexer) Peek() (r rune, ok bool) {
+	r = l.source.Peek()
+	if getTokenType(r) == eof {
+		return rune(0), false
+	}
+	return r, true
+}
+
 func getTokenType(r rune) LexerTokenType {
 	switch r {
+	case caretRune:
+		return Caret
 	case asteriskRune:
 		return Asterisk
 	case scanner.EOF:
-		return EOF
+		return eof
 	case openBracketRune, closeBracketRune:
 		return Bracket
 	case escapeRune:
@@ -107,5 +112,5 @@ func getTokenType(r rune) LexerTokenType {
 
 type Token struct {
 	Value string
-	Kind  LexerTokenType
+	Type  LexerTokenType
 }
