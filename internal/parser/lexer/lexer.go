@@ -12,26 +12,32 @@ const (
 	escapeRune       = '\\'
 	dashRune         = '-'
 	caretRune        = '^'
+	plusRune         = '+'
 )
 
-type LexerTokenType int
+// TokenType enumerates the possible token types returned by the Lexer. Any unexported types
+// never exit the package.
+type TokenType int
 
 const (
-	eof LexerTokenType = iota
+	eof TokenType = iota
 	Asterisk
 	Text
 	Bracket
 	Backslash
 	Dash
 	Caret
+	Plus
 )
 
+// Lexer is a tokenizer that returns individual runes along with their associated types.
 type Lexer struct {
 	source   *scanner.Scanner
 	finished bool
 	current  *Token
 }
 
+// New returns a new Lexer that wraps the given source string.
 func New(source string) *Lexer {
 	var sc scanner.Scanner
 
@@ -43,12 +49,16 @@ func New(source string) *Lexer {
 	return l
 }
 
+// Scan returns the current token.
 func (l *Lexer) Scan() *Token {
 	return &*l.current
 }
 
+// Next advances the lexer to the next token, and discards the current one. It must be called before
+// any calls to Scan.
 func (l *Lexer) Next() bool {
-	switch r := l.source.Next(); getTokenType(r) {
+	r := l.source.Next()
+	switch t := getTokenType(r); t {
 	case Asterisk:
 		for getTokenType(l.source.Peek()) == Asterisk {
 			l.source.Next()
@@ -58,15 +68,10 @@ func (l *Lexer) Next() bool {
 			Type:  Asterisk,
 		}
 
-	case Text:
+	case Bracket, Backslash, Caret, Dash, Plus, Text:
 		l.current = &Token{
 			Value: string(r),
-			Type:  Text,
-		}
-	case Bracket, Backslash, Dash, Caret:
-		l.current = &Token{
-			Value: string(r),
-			Type:  getTokenType(r),
+			Type:  t,
 		}
 
 	default:
@@ -82,16 +87,22 @@ func (l *Lexer) Next() bool {
 	return !l.finished
 }
 
-// TODO: Test Peek
-func (l *Lexer) Peek() (r rune, ok bool) {
-	r = l.source.Peek()
-	if getTokenType(r) == eof {
-		return rune(0), false
+// Peek returns the next token without consuming the current one. If the current token
+// is the last token, Peek returns nil. It can be called before the first call to Next.
+func (l *Lexer) Peek() (token *Token) {
+	r := l.source.Peek()
+	t := getTokenType(r)
+	if t == eof {
+		return nil
 	}
-	return r, true
+
+	return &Token{
+		Value: string(r),
+		Type:  t,
+	}
 }
 
-func getTokenType(r rune) LexerTokenType {
+func getTokenType(r rune) TokenType {
 	switch r {
 	case caretRune:
 		return Caret
@@ -105,6 +116,8 @@ func getTokenType(r rune) LexerTokenType {
 		return Backslash
 	case dashRune:
 		return Dash
+	case plusRune:
+		return Plus
 	default:
 		return Text
 	}
@@ -112,5 +125,5 @@ func getTokenType(r rune) LexerTokenType {
 
 type Token struct {
 	Value string
-	Type  LexerTokenType
+	Type  TokenType
 }

@@ -39,11 +39,12 @@ type Bounds struct {
 	Low, High rune
 }
 
-func (b *Bounds) IsWithin(r rune) bool {
-	return b.Low < r && r < b.High
+func (b *Bounds) Contains(r rune) bool {
+	return b.Low <= r && r <= b.High
 }
 
 type Range struct {
+	Repeated bool
 	Inverse  bool
 	Bounds   []*Bounds
 	CharList string
@@ -267,6 +268,13 @@ func parse(name string, l *lexer.Lexer) (*Node, error) {
 
 		node.Type = TypeRange
 		node.Range = rnge
+
+		if nextToken := l.Peek(); nextToken != nil {
+			if nextToken.Type == lexer.Plus {
+				l.Next() // consume the plus
+				node.Range.Repeated = true
+			}
+		}
 
 	case lexer.Backslash:
 		if !l.Next() {

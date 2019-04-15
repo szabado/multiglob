@@ -168,6 +168,28 @@ func TestParseRanges(t *testing.T) {
 		},
 		{
 			name:  "test",
+			input: "[abc]+",
+			output: &Node{
+				Type:  TypeRoot,
+				Value: "",
+				Leaf:  false,
+				Children: []*Node{
+					{
+						Children: nil,
+						Value:    "",
+						Type:     TypeRange,
+						Leaf:     true,
+						Name:     []string{"test"},
+						Range: &Range{
+							Repeated: true,
+							CharList: "abc",
+						},
+					},
+				},
+			},
+		},
+		{
+			name:  "test",
 			input: "[^abc]",
 			output: &Node{
 				Type:  TypeRoot,
@@ -879,17 +901,17 @@ func TestParseRanges(t *testing.T) {
 		{
 			name:  "test",
 			input: `[\]`,
-			err: true,
+			err:   true,
 		},
 		{
 			name:  "test",
 			input: `[\a]`,
-			err: true,
+			err:   true,
 		},
 		{
 			name:  "test",
 			input: `\a`,
-			err: true,
+			err:   true,
 		},
 	}
 

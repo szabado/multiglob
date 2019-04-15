@@ -165,11 +165,18 @@ func TestLexer(t *testing.T) {
 		t.Run(test.input, func(t *testing.T) {
 			require := r.New(t)
 
+			peeks := make([]*Token, 0)
 			output := make([]*Token, 0)
 			l := New(test.input)
 
-			for l.Next() {
-				output = append(output, l.Scan())
+			for finished := false; !finished; {
+				if t := l.Peek(); t != nil {
+					peeks = append(peeks, t)
+				}
+				finished = !l.Next()
+				if !finished {
+					output = append(output, l.Scan())
+				}
 			}
 
 			require.Equal(test.output, output)
