@@ -575,6 +575,322 @@ func TestParseRanges(t *testing.T) {
 				},
 			},
 		},
+		{
+			name:  "test",
+			input: `[\^]`,
+			output: &Node{
+				Type:  TypeRoot,
+				Value: "",
+				Leaf:  false,
+				Children: []*Node{
+					{
+						Value: "",
+						Type:  TypeRange,
+						Leaf:  true,
+						Name:  []string{"test"},
+						Range: &Range{
+							CharList: "^",
+						},
+						Children: nil,
+					},
+				},
+			},
+		},
+		{
+			name:  "test",
+			input: `[^\^]`,
+			output: &Node{
+				Type:  TypeRoot,
+				Value: "",
+				Leaf:  false,
+				Children: []*Node{
+					{
+						Value: "",
+						Type:  TypeRange,
+						Leaf:  true,
+						Name:  []string{"test"},
+						Range: &Range{
+							Inverse:  true,
+							CharList: "^",
+						},
+						Children: nil,
+					},
+				},
+			},
+		},
+		{
+			name:  "test",
+			input: `[ ^]`,
+			output: &Node{
+				Type:  TypeRoot,
+				Value: "",
+				Leaf:  false,
+				Children: []*Node{
+					{
+						Value: "",
+						Type:  TypeRange,
+						Leaf:  true,
+						Name:  []string{"test"},
+						Range: &Range{
+							CharList: " ^",
+						},
+						Children: nil,
+					},
+				},
+			},
+		},
+		{
+			name:  "test",
+			input: `[^ ^]`,
+			output: &Node{
+				Type:  TypeRoot,
+				Value: "",
+				Leaf:  false,
+				Children: []*Node{
+					{
+						Value: "",
+						Type:  TypeRange,
+						Leaf:  true,
+						Name:  []string{"test"},
+						Range: &Range{
+							Inverse:  true,
+							CharList: " ^",
+						},
+						Children: nil,
+					},
+				},
+			},
+		},
+		{
+			name:  "test",
+			input: `[ \]]`,
+			output: &Node{
+				Type:  TypeRoot,
+				Value: "",
+				Leaf:  false,
+				Children: []*Node{
+					{
+						Value: "",
+						Type:  TypeRange,
+						Leaf:  true,
+						Name:  []string{"test"},
+						Range: &Range{
+							CharList: " ]",
+						},
+						Children: nil,
+					},
+				},
+			},
+		},
+		{
+			name:  "test",
+			input: `[^ \]]`,
+			output: &Node{
+				Type:  TypeRoot,
+				Value: "",
+				Leaf:  false,
+				Children: []*Node{
+					{
+						Value: "",
+						Type:  TypeRange,
+						Leaf:  true,
+						Name:  []string{"test"},
+						Range: &Range{
+							Inverse:  true,
+							CharList: " ]",
+						},
+						Children: nil,
+					},
+				},
+			},
+		},
+		{
+			name:  "test",
+			input: `[ \-]`,
+			output: &Node{
+				Type:  TypeRoot,
+				Value: "",
+				Leaf:  false,
+				Children: []*Node{
+					{
+						Value: "",
+						Type:  TypeRange,
+						Leaf:  true,
+						Name:  []string{"test"},
+						Range: &Range{
+							CharList: " -",
+						},
+						Children: nil,
+					},
+				},
+			},
+		},
+		{
+			name:  "test",
+			input: `[^ \-]`,
+			output: &Node{
+				Type:  TypeRoot,
+				Value: "",
+				Leaf:  false,
+				Children: []*Node{
+					{
+						Value: "",
+						Type:  TypeRange,
+						Leaf:  true,
+						Name:  []string{"test"},
+						Range: &Range{
+							Inverse:  true,
+							CharList: " -",
+						},
+						Children: nil,
+					},
+				},
+			},
+		},
+		{
+			name:  "test",
+			input: `[^^]`,
+			output: &Node{
+				Type:  TypeRoot,
+				Value: "",
+				Leaf:  false,
+				Children: []*Node{
+					{
+						Value: "",
+						Type:  TypeRange,
+						Leaf:  true,
+						Name:  []string{"test"},
+						Range: &Range{
+							Inverse:  true,
+							CharList: "^",
+						},
+						Children: nil,
+					},
+				},
+			},
+		},
+		{
+			name:  "test",
+			input: `[\--\-]`,
+			output: &Node{
+				Type:  TypeRoot,
+				Value: "",
+				Leaf:  false,
+				Children: []*Node{
+					{
+						Value: "",
+						Type:  TypeRange,
+						Leaf:  true,
+						Name:  []string{"test"},
+						Range: &Range{
+							Bounds: []*Bounds{
+								{
+									Low:  '-',
+									High: '-',
+								},
+							},
+						},
+						Children: nil,
+					},
+				},
+			},
+		},
+		{
+			name:  "test",
+			input: `[^\^-\^]`,
+			output: &Node{
+				Type:  TypeRoot,
+				Value: "",
+				Leaf:  false,
+				Children: []*Node{
+					{
+						Value: "",
+						Type:  TypeRange,
+						Leaf:  true,
+						Name:  []string{"test"},
+						Range: &Range{
+							Inverse: true,
+							Bounds: []*Bounds{
+								{
+									Low:  '^',
+									High: '^',
+								},
+							},
+						},
+						Children: nil,
+					},
+				},
+			},
+		},
+		{
+			name:  "test",
+			input: `[^^-^]`,
+			output: &Node{
+				Type:  TypeRoot,
+				Value: "",
+				Leaf:  false,
+				Children: []*Node{
+					{
+						Value: "",
+						Type:  TypeRange,
+						Leaf:  true,
+						Name:  []string{"test"},
+						Range: &Range{
+							Inverse: true,
+							Bounds: []*Bounds{
+								{
+									Low:  '^',
+									High: '^',
+								},
+							},
+						},
+						Children: nil,
+					},
+				},
+			},
+		},
+		{
+			name:  "test",
+			input: `[\-\--\-\-]`,
+			output: &Node{
+				Type:  TypeRoot,
+				Value: "",
+				Leaf:  false,
+				Children: []*Node{
+					{
+						Value: "",
+						Type:  TypeRange,
+						Leaf:  true,
+						Name:  []string{"test"},
+						Range: &Range{
+							CharList: "--",
+							Bounds: []*Bounds{
+								{
+									Low:  '-',
+									High: '-',
+								},
+							},
+						},
+						Children: nil,
+					},
+				},
+			},
+		},
+		{
+			name:  "test",
+			input: `[\]`,
+			err: true,
+		},
+		{
+			name:  "test",
+			input: `[\a]`,
+			err: true,
+		},
+		{
+			name:  "test",
+			input: `\a`,
+			err: true,
+		},
 	}
 
 	for _, test := range tests {
@@ -807,7 +1123,6 @@ func TestMerge(t *testing.T) {
 				outputs = append(outputs, ast)
 			}
 
-			fmt.Println(outputs)
 			final := outputs[0]
 			for _, output := range outputs[1:] {
 				final = Merge(final, output)

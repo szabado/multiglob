@@ -1,7 +1,6 @@
 package parser
 
 import (
-	"fmt"
 	"unicode/utf8"
 
 	"github.com/pkg/errors"
@@ -170,8 +169,6 @@ func parse(name string, l *lexer.Lexer) (*Node, error) {
 		node.Type = TypeAny
 		node.Value = "*"
 	case lexer.Bracket:
-		fmt.Println("found opening bracket, starting range parse", token.Value)
-
 		if token.Value == "]" {
 			node.Value = token.Value
 			node.Type = TypeText
@@ -185,6 +182,7 @@ func parse(name string, l *lexer.Lexer) (*Node, error) {
 			previousValid = false
 			parsingBounds = false
 			normalChar    = false
+			escaped       = false
 		)
 
 		for finished := false; !finished; charCount++ {
@@ -195,29 +193,26 @@ func parse(name string, l *lexer.Lexer) (*Node, error) {
 			token = l.Scan()
 			switch token.Type {
 			case lexer.Caret:
-				fmt.Println("Found caret")
 				if charCount == 0 {
 					rnge.Inverse = true
 					normalChar = false
 				} else {
 					normalChar = true
 				}
+				escaped = false
 			case lexer.Dash:
-				fmt.Println("Found dash")
-				if charCount == 0 || charCount == 1 && rnge.Inverse {
+				if charCount == 0 || charCount == 1 && rnge.Inverse || escaped {
 					normalChar = true
 				} else {
 					parsingBounds = true
 					previousValid = false
 					normalChar = false
 				}
+				escaped = false
 			case lexer.Bracket:
-				fmt.Println("Found bracket")
-				if charCount == 0 || charCount == 1 && rnge.Inverse {
-					fmt.Println("treating as normal char")
+				if charCount == 0 || charCount == 1 && rnge.Inverse || escaped {
 					normalChar = true
 				} else if token.Value == "]" {
-					fmt.Println("closing")
 					// Close this, handle error cases
 					if parsingBounds {
 						return nil, errors.Errorf("invalid range syntax %s-", string(previous))
@@ -231,13 +226,18 @@ func parse(name string, l *lexer.Lexer) (*Node, error) {
 				} else {
 					normalChar = true
 				}
-			// TODO: Add escaping
+				escaped = false
+			case lexer.Backslash:
+				escaped = true
+				normalChar = false
 			default:
 				// Treat anything unhandled as text
 				fallthrough
 			case lexer.Text:
-				fmt.Println("Found text", token.Value)
 				normalChar = true
+				if escaped {
+					return nil, errors.Errorf(`unknown escaping: \%s`, string(token.Value[0]))
+				}
 			}
 
 			if !normalChar {
@@ -255,7 +255,6 @@ func parse(name string, l *lexer.Lexer) (*Node, error) {
 				parsingBounds = false
 			} else {
 				if previousValid {
-					fmt.Println("adding as valid char: ", string(previous))
 					rnge.addValidChar(previous)
 				}
 				previous = r
@@ -302,23 +301,11 @@ func parse(name string, l *lexer.Lexer) (*Node, error) {
 	}
 
 	node.Leaf = node.Children == nil
-	fmt.Println("leaf status: ", node.Leaf)
 	if node.Leaf {
 		node.Name = []string{name}
 	}
 
 	return node, nil
-}
-
-func getNodeType(tokenType lexer.LexerTokenType) NodeType {
-	switch tokenType {
-	case lexer.Asterisk:
-		return TypeAny
-	case lexer.Text:
-		return TypeText
-	default:
-		return NodeType(-1)
-	}
 }
 
 func Parse(name, input string) (*Node, error) {
