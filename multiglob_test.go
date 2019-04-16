@@ -117,20 +117,69 @@ func TestMatch(t *testing.T) {
 			},
 			output: false,
 		},
-		//{
-		//	input: "ba",
-		//	patterns: []string{
-		//		"[ab]+",
-		//	},
-		//	output: true,
-		//},
-		//{
-		//	input: "aa",
-		//	patterns: []string{
-		//		"[a]+a",
-		//	},
-		//	output: true,
-		//},
+		{
+			input: "ba",
+			patterns: []string{
+				"[ab]+",
+			},
+			output: true,
+		},
+		{
+			input: "bb",
+			patterns: []string{
+				"[a]+bb",
+			},
+			output: false,
+		},
+		{
+			input: "bb",
+			patterns: []string{
+				"[a]bb",
+			},
+			output: false,
+		},
+		{
+			input: "aa",
+			patterns: []string{
+				"[a]+a",
+			},
+			output: true,
+		},
+		{
+			input: "this.is.not.a.dance",
+			patterns: []string{
+				"this[^.]dance",
+			},
+			output: false,
+		},
+		{
+			input: "this.is.not.a.dance",
+			patterns: []string{
+				"this[isnota.]dance",
+			},
+			output: false,
+		},
+		{
+			input: "this.is.not.a.dance",
+			patterns: []string{
+				"this[isnota.]+dance",
+			},
+			output: true,
+		},
+		{
+			input: "this.is.not.a.dance",
+			patterns: []string{
+				"this[*]+dance",
+			},
+			output: false,
+		},
+		{
+			input: "",
+			patterns: []string{
+				"[abc]",
+			},
+			output: false,
+		},
 	}
 
 	for _, test := range tests {

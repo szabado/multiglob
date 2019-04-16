@@ -277,14 +277,15 @@ func match(node *parser.Node, input string, exhaustive bool) ([]string, bool) {
 
 	case parser.TypeRange:
 		short := input
-		for i, r := range input {
+		for _, r := range input {
 			if !isConsumable(r, node.Range) {
 				break
 			}
-			short = strings.Trim(short, string(r))
+
+			short = strings.TrimPrefix(short, string(r))
 
 			for _, child := range node.Children {
-				names, ok := match(child, trimString(input, i), exhaustive)
+				names, ok := match(child, short, exhaustive)
 				if !ok {
 					continue
 				}
@@ -294,6 +295,14 @@ func match(node *parser.Node, input string, exhaustive bool) ([]string, bool) {
 				}
 				results = merge(results, names)
 			}
+
+			if !node.Range.Repeated {
+				break
+			}
+		}
+
+		if node.Leaf && short == "" && len(short) != len(input) {
+			results = append(results, node.Name...)
 		}
 	case parser.TypeRoot:
 		for _, c := range node.Children {
