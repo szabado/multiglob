@@ -1256,6 +1256,36 @@ func TestMerge(t *testing.T) {
 				},
 			},
 		},
+		{
+			inputs: []string{
+				"[a]",
+				"[ab]",
+			},
+			output: &Node{
+				Value: "",
+				Type:  TypeRoot,
+				Children: []*Node{
+					{
+						Children: nil,
+						Type:     TypeRange,
+						Leaf:     true,
+						Range: &Range{
+							CharList: "a",
+						},
+						Name: []string{"0"},
+					},
+					{
+						Children: nil,
+						Type:     TypeRange,
+						Leaf:     true,
+						Range: &Range{
+							CharList: "ab",
+						},
+						Name: []string{"1"},
+					},
+				},
+			},
+		},
 	}
 
 	for i, test := range tests {
