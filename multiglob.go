@@ -77,21 +77,32 @@ type MultiGlob struct {
 
 // Match determines if any pattern matches the provided string.
 func (mg *MultiGlob) Match(input string) bool {
-	_, matched := match(mg.node, input, false, false)
+	_, matched := match(mg.node, input, false)
 	return matched
 }
 
 // FindAllPatterns returns a list containing all patterns that matched this input.
 func (mg *MultiGlob) FindAllPatterns(input string) []string {
-	results, _ := match(mg.node, input, false, true)
-	return results
+	results, _ := match(mg.node, input, true)
+	duplicates := make(map[string]bool)
+
+	cleaned := make([]string, 0, len(results))
+	for _, result := range results {
+		if duplicates[result] {
+			continue
+		}
+		duplicates[result] = true
+		cleaned = append(cleaned, result)
+	}
+
+	return cleaned
 }
 
 // FindPattern returns one pattern out of the set of patterns that matches input.
 // There is no guarantee as to which of the patterns will be returned. Returns true
 // if a pattern was matched.
 func (mg *MultiGlob) FindPattern(input string) (string, bool) {
-	results, ok := match(mg.node, input, false, false)
+	results, ok := match(mg.node, input, false)
 	if !ok || len(results) < 1 {
 		return "", false
 	}
@@ -152,7 +163,6 @@ var errTextNotFound = errors.New("text not found")
 // extractGlobs returns the globs based on the pattern. It either returns a nil error or
 // errTextNotFound
 func extractGlobs(input string, ast *parser.Node) ([]string, error) {
-	// TODO: decrease allows by making this ceil(half the tree size)
 	globs := make([]string, 0)
 
 	for leafConsumed := false; !leafConsumed && ast != nil; {
@@ -161,7 +171,7 @@ func extractGlobs(input string, ast *parser.Node) ([]string, error) {
 			if !strings.HasPrefix(input, ast.Value) {
 				return nil, errTextNotFound
 			}
-			input = strings.TrimPrefix(input, ast.Value)
+			input = trimString(input, len(ast.Value))
 			if ast.Leaf {
 				leafConsumed = true
 			}
@@ -208,11 +218,9 @@ func extractGlobs(input string, ast *parser.Node) ([]string, error) {
 	return globs, nil
 }
 
-func match(node *parser.Node, input string, any, exhaustive bool) ([]string, bool) {
+func match(node *parser.Node, input string, exhaustive bool) ([]string, bool) {
 	var (
-		childInput string
-		childAny   bool
-		results    []string
+		results []string
 	)
 
 	switch node.Type {
@@ -224,61 +232,102 @@ func match(node *parser.Node, input string, any, exhaustive bool) ([]string, boo
 			results = merge(results, node.Name)
 		}
 
-		childInput = input
-		childAny = true
+		for _, child := range node.Children {
+			tempInput := input
+			for i := child.Index(tempInput); i >= 0; i = child.Index(tempInput) {
+				if i < 0 {
+					continue
+				}
 
+				names, ok := match(child, trimString(tempInput, i), exhaustive)
+				tempInput = trimString(tempInput, i+len(child.Value))
+
+				if !ok {
+					continue
+				}
+
+				if !exhaustive {
+					return names, true
+				}
+				results = merge(results, names)
+			}
+		}
 	case parser.TypeText:
-		if any {
-			if node.Leaf && strings.HasSuffix(input, node.Value) {
-				if !exhaustive {
-					return node.Name, true
-				}
-				results = merge(results, node.Name)
-			} else if i := strings.Index(input, node.Value); i < 0 {
-				return nil, false
-			} else {
-				trunc := input[i+len(node.Value):]
-				if r, ok := match(node, trunc, true, exhaustive); ok {
-					if !exhaustive {
-						return r, true
-					}
-					results = merge(results, node.Name)
-				}
-
-				childInput = trunc
-				childAny = false
+		if node.Leaf && node.Value == input {
+			if !exhaustive {
+				return node.Name, true
 			}
-		} else {
-			if node.Leaf && node.Value == input {
-				if !exhaustive {
-					return node.Name, true
-				}
-				results = merge(results, node.Name)
-			} else if !strings.HasPrefix(input, node.Value) {
-				return nil, false
-			}
-
-			trunc := input[len(node.Value):]
-
-			childAny = false
-			childInput = trunc
+			results = merge(results, node.Name)
+		} else if !strings.HasPrefix(input, node.Value) {
+			return nil, false
 		}
-	default:
-		childInput = input
-		childAny = any
-	}
 
-	for _, c := range node.Children {
-		sl, ok := match(c, childInput, childAny, exhaustive)
-		if ok {
-			if exhaustive {
-				results = merge(results, sl)
-			} else {
-				return sl, true
+		input = trimString(input, len(node.Value))
+
+		for _, c := range node.Children {
+			names, ok := match(c, input, exhaustive)
+			if !ok {
+				continue
+			}
+			if !exhaustive {
+				return names, true
+			}
+			results = merge(results, names)
+		}
+
+	case parser.TypeRange:
+		short := input
+		for i, r := range input {
+			if !isConsumable(r, node.Range) {
+				break
+			}
+			short = strings.Trim(short, string(r))
+
+			for _, child := range node.Children {
+				names, ok := match(child, trimString(input, i), exhaustive)
+				if !ok {
+					continue
+				}
+
+				if !exhaustive {
+					return names, true
+				}
+				results = merge(results, names)
 			}
 		}
+	case parser.TypeRoot:
+		for _, c := range node.Children {
+			names, ok := match(c, input, exhaustive)
+			if !ok {
+				continue
+			}
+			if !exhaustive {
+				return names, true
+			}
+			results = merge(results, names)
+		}
 	}
+
 	return results, len(results) != 0
+}
+
+func trimString(s string, prefixLen int) string {
+	if len(s) <= prefixLen {
+		return ""
+	}
+	return s[prefixLen:]
+}
+
+// isConsumable checks if the rune can be consumed, based on the rules in rnge. If rnge is an inverse
+// parser.Range, it'll return true if the rune doesn't match any of the rnge's rules. If rnge is a
+// normal range, it'll return true if the rune matches any of the rnge's rules.
+func isConsumable(r rune, rnge *parser.Range) bool {
+	contains := rnge.Contains(r)
+	if rnge.Inverse {
+		return !contains
+	}
+
+	return contains
 }
 
 func merge(sl1, sl2 []string) []string {

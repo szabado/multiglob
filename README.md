@@ -91,7 +91,8 @@ Yep! But I didn't want the overhead of `http` and I wanted to write this for fun
 
 ## Limitations
 
-This only supports wildcards `*`. If you need more, I'd suggest checking out [glob](https://github.com/gobwas/glob).
+This only supports wildcards (`*`) and character ranges (`[ab]`, `[^cd]`, `[e-h]`, etc.). If you need more, I'd
+suggest checking out [glob](https://github.com/gobwas/glob).
 
 ## Requirements
 

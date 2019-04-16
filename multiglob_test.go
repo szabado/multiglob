@@ -117,6 +117,20 @@ func TestMatch(t *testing.T) {
 			},
 			output: false,
 		},
+		//{
+		//	input: "ba",
+		//	patterns: []string{
+		//		"[ab]+",
+		//	},
+		//	output: true,
+		//},
+		//{
+		//	input: "aa",
+		//	patterns: []string{
+		//		"[a]+a",
+		//	},
+		//	output: true,
+		//},
 	}
 
 	for _, test := range tests {
@@ -178,7 +192,7 @@ func TestFindAllPatterns(t *testing.T) {
 			patterns: map[string]string{
 				"a": "foobar",
 			},
-			output: nil,
+			output: []string{},
 		},
 		{
 			input: "foo",
@@ -209,6 +223,17 @@ func TestFindAllPatterns(t *testing.T) {
 			},
 			output: []string{
 				"a",
+			},
+		},
+		{
+			input: "pen pineapple apple pen",
+			patterns: map[string]string{
+				"a": "*apple*",
+				"b": "*pen*",
+			},
+			output: []string{
+				"a",
+				"b",
 			},
 		},
 	}
@@ -581,6 +606,102 @@ func TestFindAllGlobs(t *testing.T) {
 
 			output := mg.FindAllGlobs(test.input)
 			require.Equal(test.output, output)
+		})
+	}
+}
+
+func TestIsConsumable(t *testing.T) {
+	tests := []struct {
+		charRange *parser.Range
+		input     rune
+		output    bool
+	}{
+		{
+			input: 'a',
+			charRange: &parser.Range{
+				CharList: "abc",
+			},
+			output: true,
+		},
+		{
+			input: 'a',
+			charRange: &parser.Range{
+				Bounds: []*parser.Bounds{
+					{
+						Low:  'a',
+						High: 'z',
+					},
+				},
+			},
+			output: true,
+		},
+		{
+			input: 'A',
+			charRange: &parser.Range{
+				CharList: "abc",
+			},
+			output: false,
+		},
+		{
+			input: 'A',
+			charRange: &parser.Range{
+				Bounds: []*parser.Bounds{
+					{
+						Low:  'a',
+						High: 'z',
+					},
+				},
+			},
+			output: false,
+		},
+		{
+			input: 'a',
+			charRange: &parser.Range{
+				Inverse:  true,
+				CharList: "abc",
+			},
+			output: false,
+		},
+		{
+			input: 'a',
+			charRange: &parser.Range{
+				Inverse: true,
+				Bounds: []*parser.Bounds{
+					{
+						Low:  'a',
+						High: 'z',
+					},
+				},
+			},
+			output: false,
+		},
+		{
+			input: 'A',
+			charRange: &parser.Range{
+				Inverse:  true,
+				CharList: "abc",
+			},
+			output: true,
+		},
+		{
+			input: 'A',
+			charRange: &parser.Range{
+				Inverse: true,
+				Bounds: []*parser.Bounds{
+					{
+						Low:  'a',
+						High: 'z',
+					},
+				},
+			},
+			output: true,
+		},
+	}
+
+	for i, test := range tests {
+		t.Run(fmt.Sprint(i), func(t *testing.T) {
+			require := r.New(t)
+			require.Equal(test.output, isConsumable(test.input, test.charRange))
 		})
 	}
 }

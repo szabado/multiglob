@@ -1,6 +1,8 @@
 package parser
 
 import (
+	"math"
+	"strings"
 	"unicode/utf8"
 
 	"github.com/pkg/errors"
@@ -52,6 +54,21 @@ type Range struct {
 
 func (r *Range) addValidChar(ru rune) {
 	r.CharList += string(ru)
+}
+
+// Contains returns true if the rune is matched by the Range. It ignores Inverse.
+func (r *Range) Contains(ru rune) bool {
+	if strings.ContainsRune(r.CharList, ru) {
+		return true
+	}
+
+	for _, bound := range r.Bounds {
+		if bound.Contains(ru) {
+			return true
+		}
+	}
+
+	return false
 }
 
 type Node struct {
@@ -145,6 +162,32 @@ func (n *Node) compress() {
 	n.Children = child.Children
 	n.Leaf = child.Leaf
 	n.Name = mergeNames(n, child)
+}
+
+// Index returns the first index of the Node's expression in the string
+func (n *Node) Index(s string) int {
+	switch n.Type {
+	case TypeAny:
+		min := math.MaxInt32
+		for _, child := range n.Children {
+			if i := child.Index(s); i < min {
+				min = i
+			}
+		}
+		return min
+
+	case TypeText:
+		return strings.Index(s, n.Value)
+	case TypeRange:
+		i := 0
+		for r, l := utf8.DecodeRuneInString(s); l > 1; r, l = utf8.DecodeRuneInString(s) {
+			if n.Range.Contains(r) {
+				return i
+			}
+			i += l
+		}
+	}
+	return -1
 }
 
 func mergeNames(n1, n2 *Node) []string {
