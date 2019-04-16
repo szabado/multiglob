@@ -51,7 +51,7 @@ func (r *Range) addValidChar(ru rune) {
 	r.CharList += string(ru)
 }
 
-// Matches returns true if the rune is matched by the Range. It ignores Inverse.
+// Matches returns true if the rune is matched by the Range.
 func (r *Range) Matches(ru rune) bool {
 	if strings.ContainsRune(r.CharList, ru) {
 		return !r.Inverse
@@ -91,6 +91,9 @@ func (n *Node) canMerge(n2 *Node) bool {
 		// Do nothing, Any nodes can always merge
 	case TypeText:
 		return n.Value == n2.Value
+	case TypeRange:
+		// Merging ranges can be messy. Avoid it.
+		return false
 	}
 	return true
 }
