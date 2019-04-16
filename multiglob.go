@@ -2,6 +2,7 @@ package multiglob
 
 import (
 	"strings"
+	"unicode/utf8"
 
 	"github.com/pkg/errors"
 
@@ -190,7 +191,7 @@ func extractGlobs(input string, ast *parser.Node) ([]string, error) {
 			for globbed := input; globbed != ""; {
 				child := ast.Children[0]
 
-				globEnds := strings.LastIndex(globbed, child.Value)
+				globEnds := child.LastIndex(globbed)
 				if globEnds < 0 {
 					return nil, errTextNotFound
 				}
@@ -203,6 +204,50 @@ func extractGlobs(input string, ast *parser.Node) ([]string, error) {
 				}
 
 				// we found our match!
+				globs = append(globs, globbed)
+				globs = append(globs, subglobs...)
+				leafConsumed = true
+				break
+			}
+		case parser.TypeRange:
+			lastIndex := -1
+			for i, r := range input {
+				if !ast.Range.Contains(r) {
+					break
+				}
+				lastIndex = i
+			}
+
+			if ast.Leaf {
+				if lastIndex == len(input)-1 {
+					globs = append(globs, input)
+					leafConsumed = true
+					break
+				} else {
+					return nil, errTextNotFound
+				}
+			}
+
+			for globbed := input[lastIndex:]; globbed != ""; {
+				r, size := utf8.DecodeLastRuneInString(globbed)
+				if r == utf8.RuneError && size < 2 {
+					return nil, errTextNotFound
+				}
+
+				globEnds := len(globbed) - size
+				globbed = globbed[:globEnds]
+
+				if !ast.Range.Contains(r) {
+					continue
+				}
+
+				// we've found a match. Recurse on the tail of input
+				subglobs, err := extractGlobs(trimString(globbed, globEnds), ast.Children[0])
+				if err != nil {
+					continue
+				}
+
+				// We've found our match!
 				globs = append(globs, globbed)
 				globs = append(globs, subglobs...)
 				leafConsumed = true
@@ -235,10 +280,6 @@ func match(node *parser.Node, input string, exhaustive bool) ([]string, bool) {
 		for _, child := range node.Children {
 			tempInput := input
 			for i := child.Index(tempInput); i >= 0; i = child.Index(tempInput) {
-				if i < 0 {
-					continue
-				}
-
 				names, ok := match(child, trimString(tempInput, i), exhaustive)
 				tempInput = trimString(tempInput, i+len(child.Value))
 

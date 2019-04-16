@@ -180,6 +180,13 @@ func TestMatch(t *testing.T) {
 			},
 			output: false,
 		},
+		{
+			input: "abcdef",
+			patterns: []string{
+				"*[def]+",
+			},
+			output: true,
+		},
 	}
 
 	for _, test := range tests {
@@ -549,6 +556,23 @@ func TestFindGlobs(t *testing.T) {
 			pattern: "a*a*a",
 			output:  nil,
 			matched: false,
+		},
+		{
+			input:   "abcba",
+			pattern: "[abc]+",
+			output: []string{
+				"abcba",
+			},
+			matched: true,
+		},
+		{
+			input:   "abcdef",
+			pattern: "*[d-f]+",
+			output: []string{
+				"abc",
+				"def",
+			},
+			matched: true,
 		},
 	}
 

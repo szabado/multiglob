@@ -164,7 +164,7 @@ func (n *Node) compress() {
 	n.Name = mergeNames(n, child)
 }
 
-// Index returns the first index of the Node's expression in the string
+// Index returns the first index of the Node's expression in the string.
 func (n *Node) Index(s string) int {
 	switch n.Type {
 	case TypeAny:
@@ -180,11 +180,42 @@ func (n *Node) Index(s string) int {
 		return strings.Index(s, n.Value)
 	case TypeRange:
 		i := 0
-		for r, l := utf8.DecodeRuneInString(s); l > 1; r, l = utf8.DecodeRuneInString(s) {
+		for r, l := utf8.DecodeRuneInString(s); !(r == utf8.RuneError && l < 2); r, l = utf8.DecodeRuneInString(s[i:]) {
 			if n.Range.Contains(r) {
 				return i
 			}
 			i += l
+		}
+	}
+	return -1
+}
+
+// LastIndex returns the last index of the Node's expression in the string.
+// For ranges, it returns the beginning of the last blob
+func (n *Node) LastIndex(s string) int {
+	switch n.Type {
+	case TypeAny:
+		max := math.MinInt32
+		for _, child := range n.Children {
+			if i := child.LastIndex(s); i > max {
+				max = i
+			}
+		}
+		return max
+	case TypeText:
+		return strings.LastIndex(s, n.Value)
+	case TypeRange:
+		i := len(s)
+		inBlob := false
+		for r, l := utf8.DecodeLastRuneInString(s); !(r == utf8.RuneError && l < 2); r, l = utf8.DecodeLastRuneInString(s[:i]) {
+			contains := n.Range.Contains(r)
+			if contains && !inBlob {
+				inBlob = true
+			} else if !contains && inBlob {
+				return i
+			}
+
+			i -= l
 		}
 	}
 	return -1
