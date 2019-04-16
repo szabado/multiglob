@@ -159,6 +159,24 @@ func TestLexer(t *testing.T) {
 				},
 			},
 		},
+		{
+			input: `^`,
+			output: []*Token{
+				{
+					Value: `^`,
+					Type:  Caret,
+				},
+			},
+		},
+		{
+			input: `+`,
+			output: []*Token{
+				{
+					Value: `+`,
+					Type:  Plus,
+				},
+			},
+		},
 	}
 
 	for _, test := range tests {

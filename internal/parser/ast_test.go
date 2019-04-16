@@ -124,6 +124,24 @@ func TestParser(t *testing.T) {
 				},
 			},
 		},
+		{
+			name:  "test",
+			input: `\[`,
+			output: &Node{
+				Type:  TypeRoot,
+				Value: "",
+				Leaf:  false,
+				Children: []*Node{
+					{
+						Children: nil,
+						Value:    "[",
+						Leaf:     true,
+						Type:     TypeText,
+						Name:     []string{"test"},
+					},
+				},
+			},
+		},
 	}
 
 	for _, test := range tests {
@@ -1009,6 +1027,16 @@ func TestParseRanges(t *testing.T) {
 			input: `\a`,
 			err:   true,
 		},
+		{
+			name:  `test`,
+			input: `\`,
+			err:   true,
+		},
+		{
+			name:  `test`,
+			input: `a[`,
+			err:   true,
+		},
 	}
 
 	for _, test := range tests {
@@ -1251,6 +1279,93 @@ func TestMerge(t *testing.T) {
 	}
 }
 
+func TestCanMerge(t *testing.T) {
+	require := r.New(t)
+
+	var n1, n2 *Node
+	require.True(n1.canMerge(n2))
+}
+
+func TestIndex(t *testing.T) {
+	tests := []struct {
+		input        string
+		inputPattern string
+		output       int
+	}{
+		{
+			input:        "12341234",
+			inputPattern: "[234]",
+			output:       1,
+		},
+		{
+			input:        "12341234",
+			inputPattern: "potato",
+			output:       -1,
+		},
+		{
+			input:        "12341234",
+			inputPattern: "*",
+			output:       0,
+		},
+		{
+			input:        "12341234",
+			inputPattern: "4",
+			output:       3,
+		},
+	}
+
+	for i, test := range tests {
+		t.Run(fmt.Sprint(i), func(t *testing.T) {
+			require := r.New(t)
+
+			node, err := Parse(fmt.Sprint(i), test.inputPattern)
+			require.NoError(err)
+
+			require.Equal(test.output, node.Children[0].Index(test.input))
+		})
+	}
+}
+
+func TestLastIndex(t *testing.T) {
+	tests := []struct {
+		input        string
+		inputPattern string
+		output       int
+	}{
+		{
+			input:        "12341234",
+			inputPattern: "[234]",
+			output:       5,
+		},
+		{
+			input:        "12341234",
+			inputPattern: "potato",
+			output:       -1,
+		},
+		{
+			input:        "12341234",
+			inputPattern: "*",
+			output:       7,
+		},
+		{
+			input:        "12341234",
+			inputPattern: "4",
+			output:       7,
+		},
+	}
+
+	for i, test := range tests {
+		t.Run(fmt.Sprint(i), func(t *testing.T) {
+			require := r.New(t)
+
+			node, err := Parse(fmt.Sprint(i), test.inputPattern)
+			require.NoError(err)
+
+			require.Equal(test.output, node.Children[0].LastIndex(test.input))
+		})
+	}
+}
+
 func TestMultipleMerges(t *testing.T) {
 	require := r.New(t)
 
@@ -1405,6 +1520,72 @@ func TestCompress(t *testing.T) {
 						Leaf:     true,
 						Name:     []string{"2"},
 						Children: nil,
+					},
+				},
+			},
+		},
+		{
+			input: &Node{
+				Value: "",
+				Type:  TypeRoot,
+				Children: []*Node{
+					{
+						Value: "a",
+						Type:  TypeText,
+						Children: []*Node{
+							{
+								Value: "a",
+								Type:  TypeText,
+								Children: []*Node{
+									{
+										Value:    "b",
+										Type:     TypeText,
+										Leaf:     true,
+										Name:     []string{"2"},
+										Children: nil,
+									},
+								},
+							},
+							{
+								Value: "a",
+								Type:  TypeText,
+								Children: []*Node{
+									{
+										Value:    "b",
+										Type:     TypeText,
+										Leaf:     true,
+										Name:     []string{"2"},
+										Children: nil,
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			output: &Node{
+				Value: "",
+				Type:  TypeRoot,
+				Children: []*Node{
+					{
+						Value: "a",
+						Type:  TypeText,
+						Children: []*Node{
+							{
+								Value:    "ab",
+								Type:     TypeText,
+								Leaf:     true,
+								Name:     []string{"2"},
+								Children: nil,
+							},
+							{
+								Value:    "ab",
+								Type:     TypeText,
+								Leaf:     true,
+								Name:     []string{"2"},
+								Children: nil,
+							},
+						},
 					},
 				},
 			},

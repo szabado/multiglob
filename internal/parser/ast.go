@@ -1,17 +1,12 @@
 package parser
 
 import (
-	"math"
 	"strings"
 	"unicode/utf8"
 
 	"github.com/pkg/errors"
 
 	"github.com/szabado/multiglob/internal/parser/lexer"
-)
-
-const (
-	dashRune = '-'
 )
 
 type NodeType int
@@ -142,7 +137,6 @@ func (n *Node) merge(n2 *Node) *Node {
 	}
 }
 
-// TODO: make this method not mutate the nodes
 func (n *Node) compress() {
 	if len(n.Children) != 1 {
 		for _, child := range n.Children {
@@ -168,14 +162,7 @@ func (n *Node) compress() {
 func (n *Node) Index(s string) int {
 	switch n.Type {
 	case TypeAny:
-		min := math.MaxInt32
-		for _, child := range n.Children {
-			if i := child.Index(s); i < min {
-				min = i
-			}
-		}
-		return min
-
+		return 0
 	case TypeText:
 		return strings.Index(s, n.Value)
 	case TypeRange:
@@ -195,13 +182,7 @@ func (n *Node) Index(s string) int {
 func (n *Node) LastIndex(s string) int {
 	switch n.Type {
 	case TypeAny:
-		max := math.MinInt32
-		for _, child := range n.Children {
-			if i := child.LastIndex(s); i > max {
-				max = i
-			}
-		}
-		return max
+		return len(s) - 1
 	case TypeText:
 		return strings.LastIndex(s, n.Value)
 	case TypeRange:
@@ -334,9 +315,6 @@ func parse(name string, l *lexer.Lexer) (*Node, error) {
 				}
 				previous = r
 				previousValid = true
-				if !previousValid {
-					previous = r
-				}
 			}
 		}
 
