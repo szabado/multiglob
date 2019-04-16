@@ -1,8 +1,12 @@
 package parser
 
 import (
-	"bytes"
-	"fmt"
+	"strings"
+	"unicode/utf8"
+
+	"github.com/pkg/errors"
+
+	"github.com/szabado/multiglob/internal/parser/lexer"
 )
 
 type NodeType int
@@ -12,7 +16,55 @@ const (
 	TypeRoot NodeType = iota
 	TypeAny
 	TypeText
+	TypeRange
 )
+
+func newBounds(low, high rune) (*Bounds, error) {
+	if high < low {
+		return nil, errors.Errorf("character range (%s, %s) is out of order",
+			string(low),
+			string(high))
+	}
+
+	return &Bounds{
+		Low:  low,
+		High: high,
+	}, nil
+}
+
+type Bounds struct {
+	Low, High rune
+}
+
+func (b *Bounds) Contains(r rune) bool {
+	return b.Low <= r && r <= b.High
+}
+
+type Range struct {
+	Repeated bool
+	Inverse  bool
+	Bounds   []*Bounds
+	CharList string
+}
+
+func (r *Range) addValidChar(ru rune) {
+	r.CharList += string(ru)
+}
+
+// Matches returns true if the rune is matched by the Range.
+func (r *Range) Matches(ru rune) bool {
+	if strings.ContainsRune(r.CharList, ru) {
+		return !r.Inverse
+	}
+
+	for _, bound := range r.Bounds {
+		if bound.Contains(ru) {
+			return !r.Inverse
+		}
+	}
+
+	return r.Inverse
+}
 
 type Node struct {
 	Type     NodeType
@@ -20,29 +72,7 @@ type Node struct {
 	Children []*Node
 	Leaf     bool
 	Name     []string // Only valid on leaf nodes. List of names of patterns terminate that on this leaf node
-}
-
-func (n *Node) String() string {
-	if l := len(n.Children); l == 0 {
-		return fmt.Sprintf("%s", n.Value)
-	} else if l == 1 {
-		return fmt.Sprintf("%s%s", n.Value, n.Children[0])
-	}
-
-	b := bytes.Buffer{}
-
-	b.WriteString(n.Value)
-	b.WriteString("(")
-	for i, child := range n.Children {
-		b.WriteString(child.String())
-		if i+1 < len(n.Children) {
-			b.WriteString("|")
-		}
-	}
-
-	b.WriteString(")")
-
-	return b.String()
+	Range    *Range
 }
 
 func (n *Node) canMerge(n2 *Node) bool {
@@ -61,6 +91,9 @@ func (n *Node) canMerge(n2 *Node) bool {
 		// Do nothing, Any nodes can always merge
 	case TypeText:
 		return n.Value == n2.Value
+	case TypeRange:
+		// Merging ranges can be messy. Avoid it.
+		return false
 	}
 	return true
 }
@@ -107,6 +140,71 @@ func (n *Node) merge(n2 *Node) *Node {
 	}
 }
 
+func (n *Node) compress() {
+	if len(n.Children) != 1 {
+		for _, child := range n.Children {
+			child.compress()
+		}
+		return
+	}
+
+	child := n.Children[0]
+	child.compress()
+
+	if n.Type != TypeText || child.Type != TypeText || n.Leaf {
+		return
+	}
+
+	n.Value += child.Value
+	n.Children = child.Children
+	n.Leaf = child.Leaf
+	n.Name = mergeNames(n, child)
+}
+
+// Index returns the first index of the Node's expression in the string.
+func (n *Node) Index(s string) int {
+	switch n.Type {
+	case TypeAny:
+		return 0
+	case TypeText:
+		return strings.Index(s, n.Value)
+	case TypeRange:
+		i := 0
+		for r, l := utf8.DecodeRuneInString(s); !(r == utf8.RuneError && l < 2); r, l = utf8.DecodeRuneInString(s[i:]) {
+			if n.Range.Matches(r) {
+				return i
+			}
+			i += l
+		}
+	}
+	return -1
+}
+
+// LastIndex returns the last index of the Node's expression in the string.
+// For ranges, it returns the beginning of the last blob
+func (n *Node) LastIndex(s string) int {
+	switch n.Type {
+	case TypeAny:
+		return len(s) - 1
+	case TypeText:
+		return strings.LastIndex(s, n.Value)
+	case TypeRange:
+		i := len(s)
+		inBlob := false
+		for r, l := utf8.DecodeLastRuneInString(s); !(r == utf8.RuneError && l < 2); r, l = utf8.DecodeLastRuneInString(s[:i]) {
+			contains := n.Range.Matches(r)
+			if contains && !inBlob {
+				inBlob = true
+			} else if !contains && inBlob {
+				return i
+			}
+
+			i -= l
+		}
+	}
+	return -1
+}
+
 func mergeNames(n1, n2 *Node) []string {
 	if n1.Leaf && n2.Leaf {
 		return append(n1.Name, n2.Name...)
@@ -117,53 +215,168 @@ func mergeNames(n1, n2 *Node) []string {
 	}
 }
 
-func parse(name string, l *lexer) *Node {
+func parse(name string, l *lexer.Lexer) (*Node, error) {
 	if !l.Next() {
-		return nil
+		return nil, nil
 	}
 
+	node := &Node{}
+
 	token := l.Scan()
+	switch token.Type {
+	case lexer.Asterisk:
+		node.Type = TypeAny
+		node.Value = "*"
+	case lexer.Bracket:
+		if token.Value == "]" {
+			node.Value = token.Value
+			node.Type = TypeText
+			break
+		}
 
-	child := parse(name, l)
+		var (
+			rnge          = &Range{}
+			charCount     = 0
+			previous      rune
+			previousValid = false
+			parsingBounds = false
+			normalChar    = false
+			escaped       = false
+		)
 
-	var children []*Node
+		for finished := false; !finished; charCount++ {
+			if !l.Next() {
+				return nil, errors.New("unclosed range missing ]")
+			}
+
+			token = l.Scan()
+			switch token.Type {
+			case lexer.Caret:
+				if charCount == 0 {
+					rnge.Inverse = true
+					normalChar = false
+				} else {
+					normalChar = true
+				}
+				escaped = false
+			case lexer.Dash:
+				if charCount == 0 || charCount == 1 && rnge.Inverse || escaped {
+					normalChar = true
+				} else {
+					parsingBounds = true
+					previousValid = false
+					normalChar = false
+				}
+				escaped = false
+			case lexer.Bracket:
+				if charCount == 0 || charCount == 1 && rnge.Inverse || escaped {
+					normalChar = true
+				} else if token.Value == "]" {
+					// Close this, handle error cases
+					if parsingBounds {
+						return nil, errors.Errorf("invalid range syntax %s-", string(previous))
+					}
+
+					if previousValid {
+						rnge.addValidChar(previous)
+					}
+					normalChar = false
+					finished = true
+				} else {
+					normalChar = true
+				}
+				escaped = false
+			case lexer.Backslash:
+				escaped = true
+				normalChar = false
+			default:
+				// Treat anything unhandled as text
+				fallthrough
+			case lexer.Text:
+				normalChar = true
+				if escaped {
+					return nil, errors.Errorf(`unknown escaping: \%s`, string(token.Value[0]))
+				}
+			}
+
+			if !normalChar {
+				continue
+			}
+
+			r := rune(token.Value[0])
+
+			if parsingBounds {
+				b, err := newBounds(previous, r)
+				if err != nil {
+					return nil, err
+				}
+				rnge.Bounds = append(rnge.Bounds, b)
+				parsingBounds = false
+			} else {
+				if previousValid {
+					rnge.addValidChar(previous)
+				}
+				previous = r
+				previousValid = true
+			}
+		}
+
+		node.Type = TypeRange
+		node.Range = rnge
+
+		if nextToken := l.Peek(); nextToken != nil {
+			if nextToken.Type == lexer.Plus {
+				l.Next() // consume the plus
+				node.Range.Repeated = true
+			}
+		}
+
+	case lexer.Backslash:
+		if !l.Next() {
+			return nil, errors.New("escape found at end of pattern")
+		}
+
+		nextToken := l.Scan()
+		switch nextToken.Type {
+		case lexer.Bracket, lexer.Asterisk, lexer.Backslash:
+			node.Value = nextToken.Value
+			node.Type = TypeText
+		default:
+			r, _ := utf8.DecodeRuneInString(nextToken.Value)
+			return nil, errors.Errorf(`unknown character escaping: \%s`, string(r))
+		}
+
+		// anything other than asterisk, bracket, backslash is an error
+	case lexer.Caret, lexer.Dash, lexer.Text:
+		node.Value = token.Value
+		node.Type = TypeText
+	}
+
+	child, err := parse(name, l)
+	if err != nil {
+		return nil, err
+	}
 
 	if child != nil {
-		children = []*Node{
+		node.Children = []*Node{
 			child,
 		}
 	}
 
-	leaf := children == nil
-	var nameSl []string
-	if leaf {
-		nameSl = []string{name}
+	node.Leaf = node.Children == nil
+	if node.Leaf {
+		node.Name = []string{name}
 	}
 
-	return &Node{
-		Children: children,
-		Type:     getNodeType(token.kind),
-		Value:    token.value,
-		Leaf:     leaf,
-		Name:     nameSl,
-	}
+	return node, nil
 }
 
-func getNodeType(tokenType lexerTokenType) NodeType {
-	switch tokenType {
-	case LexerWildcard:
-		return TypeAny
-	case LexerText:
-		return TypeText
-	default:
-		return NodeType(-1)
-	}
-}
-
-func Parse(name, input string) *Node {
+func Parse(name, input string) (*Node, error) {
 	root := newRootNode(nil)
 
-	if n := parse(name, NewLexer(input)); n != nil {
+	if n, err := parse(name, lexer.New(input)); err != nil {
+		return nil, errors.Wrapf(err, "failed to parse %s", input)
+	} else if n != nil {
 		root.Children = []*Node{n}
 	} else {
 		root.Children = []*Node{
@@ -176,7 +389,9 @@ func Parse(name, input string) *Node {
 			},
 		}
 	}
-	return root
+
+	root.compress()
+	return root, nil
 }
 
 func newRootNode(children []*Node) *Node {

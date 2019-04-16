@@ -5,9 +5,9 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/szabado/multiglob/internal/parser"
-
 	r "github.com/stretchr/testify/require"
+
+	"github.com/szabado/multiglob/internal/parser"
 )
 
 func TestMatch(t *testing.T) {
@@ -117,6 +117,90 @@ func TestMatch(t *testing.T) {
 			},
 			output: false,
 		},
+		{
+			input: "ba",
+			patterns: []string{
+				"[ab]+",
+			},
+			output: true,
+		},
+		{
+			input: "bb",
+			patterns: []string{
+				"[a]+bb",
+			},
+			output: false,
+		},
+		{
+			input: "bb",
+			patterns: []string{
+				"[a]bb",
+			},
+			output: false,
+		},
+		{
+			input: "aa",
+			patterns: []string{
+				"[a]+a",
+			},
+			output: true,
+		},
+		{
+			input: "this.is.not.a.dance",
+			patterns: []string{
+				"this[^.]dance",
+			},
+			output: false,
+		},
+		{
+			input: "this.is.not.a.dance",
+			patterns: []string{
+				"this[isnota.]dance",
+			},
+			output: false,
+		},
+		{
+			input: "this.is.not.a.dance",
+			patterns: []string{
+				"this[isnota.]+dance",
+			},
+			output: true,
+		},
+		{
+			input: "this.is.not.a.dance",
+			patterns: []string{
+				"this[*]+dance",
+			},
+			output: false,
+		},
+		{
+			input: "",
+			patterns: []string{
+				"[abc]",
+			},
+			output: false,
+		},
+		{
+			input: "abcdef",
+			patterns: []string{
+				"*[def]+",
+			},
+			output: true,
+		},
+		{
+			input: "abc",
+			patterns: []string{
+				"*[^b]*",
+			},
+			output: true,
+		},
+		{
+			input: "abc",
+			patterns: []string{
+				"[^b]+",
+			},
+			output: false,
+		},
 	}
 
 	for _, test := range tests {
@@ -142,7 +226,9 @@ func TestAddPattern(t *testing.T) {
 	b.MustAddPattern("test", "pattern")
 
 	require.Equal(1, len(b.patterns))
-	require.Equal(parser.Parse("test", "pattern"), b.patterns["test"])
+	ast, err := parser.Parse("test", "pattern")
+	require.NoError(err)
+	require.Equal(ast, b.patterns["test"])
 }
 
 func TestFindAllPatterns(t *testing.T) {
@@ -176,7 +262,7 @@ func TestFindAllPatterns(t *testing.T) {
 			patterns: map[string]string{
 				"a": "foobar",
 			},
-			output: nil,
+			output: []string{},
 		},
 		{
 			input: "foo",
@@ -207,6 +293,17 @@ func TestFindAllPatterns(t *testing.T) {
 			},
 			output: []string{
 				"a",
+			},
+		},
+		{
+			input: "pen pineapple apple pen",
+			patterns: map[string]string{
+				"a": "*apple*",
+				"b": "*pen*",
+			},
+			output: []string{
+				"a",
+				"b",
 			},
 		},
 	}
@@ -339,7 +436,7 @@ func TestExtractGlobs(t *testing.T) {
 		{
 			input:   "test",
 			pattern: "test",
-			output:  []string{},
+			output:  nil,
 		},
 		{
 			input:   "foo",
@@ -395,7 +492,10 @@ func TestExtractGlobs(t *testing.T) {
 		t.Run(test.input, func(t *testing.T) {
 			require := r.New(t)
 
-			output, err := extractGlobs(test.input, parser.Parse(test.pattern, test.pattern))
+			ast, err := parser.Parse(test.pattern, test.pattern)
+			require.NoError(err)
+
+			output, err := extractGlobs(test.input, ast)
 			if test.err {
 				require.Error(err)
 			} else {
@@ -417,7 +517,7 @@ func TestFindGlobs(t *testing.T) {
 		{
 			input:   "test",
 			pattern: "test",
-			output:  []string{},
+			output:  nil,
 			matched: true,
 		},
 		{
@@ -471,6 +571,73 @@ func TestFindGlobs(t *testing.T) {
 			output:  nil,
 			matched: false,
 		},
+		{
+			input:   "abcba",
+			pattern: "[abc]+",
+			output: []string{
+				"abcba",
+			},
+			matched: true,
+		},
+		{
+			input:   "abcdef",
+			pattern: "*[d-f]+",
+			output: []string{
+				"abc",
+				"def",
+			},
+			matched: true,
+		},
+		{
+			input:   "abc",
+			pattern: "[abc][abc][abc]",
+			output: []string{
+				"a",
+				"b",
+				"c",
+			},
+			matched: true,
+		},
+		{
+			input:   "abc",
+			pattern: "*[^b]*",
+			output: []string{
+				"ab",
+				"c",
+				"",
+			},
+			matched: true,
+		},
+		{
+			input:   "abc",
+			pattern: "[^b]+",
+			output:  nil,
+			matched: false,
+		},
+		{
+			input:   "abc",
+			pattern: "a[^b]c",
+			output:  nil,
+			matched: false,
+		},
+		{
+			input:   "this.is.a.test",
+			pattern: "this.[^.]+*test",
+			output: []string{
+				"is",
+				".a.",
+			},
+			matched: true,
+		},
+		{
+			input:   "this.is.a.test",
+			pattern: "this.[^.]*test",
+			output: []string{
+				"i",
+				"s.a.",
+			},
+			matched: true,
+		},
 	}
 
 	for i, test := range tests {
@@ -516,7 +683,7 @@ func TestFindAllGlobs(t *testing.T) {
 				"a": "test",
 			},
 			output: map[string][]string{
-				"a": {},
+				"a": nil,
 			},
 		},
 		{
@@ -558,7 +725,7 @@ func TestFindAllGlobs(t *testing.T) {
 				"a": {
 					"fo",
 				},
-				"b": {},
+				"b": nil,
 			},
 		},
 	}
