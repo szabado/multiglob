@@ -187,6 +187,20 @@ func TestMatch(t *testing.T) {
 			},
 			output: true,
 		},
+		{
+			input: "abc",
+			patterns: []string{
+				"*[^b]*",
+			},
+			output: true,
+		},
+		{
+			input: "abc",
+			patterns: []string{
+				"[^b]+",
+			},
+			output: false,
+		},
 	}
 
 	for _, test := range tests {
@@ -422,7 +436,7 @@ func TestExtractGlobs(t *testing.T) {
 		{
 			input:   "test",
 			pattern: "test",
-			output:  []string{},
+			output:  nil,
 		},
 		{
 			input:   "foo",
@@ -503,7 +517,7 @@ func TestFindGlobs(t *testing.T) {
 		{
 			input:   "test",
 			pattern: "test",
-			output:  []string{},
+			output:  nil,
 			matched: true,
 		},
 		{
@@ -574,6 +588,56 @@ func TestFindGlobs(t *testing.T) {
 			},
 			matched: true,
 		},
+		{
+			input:   "abc",
+			pattern: "[abc][abc][abc]",
+			output: []string{
+				"a",
+				"b",
+				"c",
+			},
+			matched: true,
+		},
+		{
+			input:   "abc",
+			pattern: "*[^b]*",
+			output: []string{
+				"ab",
+				"c",
+				"",
+			},
+			matched: true,
+		},
+		{
+			input:   "abc",
+			pattern: "[^b]+",
+			output:  nil,
+			matched: false,
+		},
+		{
+			input:   "abc",
+			pattern: "a[^b]c",
+			output:  nil,
+			matched: false,
+		},
+		{
+			input:   "this.is.a.test",
+			pattern: "this.[^.]+*test",
+			output: []string{
+				"is",
+				".a.",
+			},
+			matched: true,
+		},
+		{
+			input:   "this.is.a.test",
+			pattern: "this.[^.]*test",
+			output: []string{
+				"i",
+				"s.a.",
+			},
+			matched: true,
+		},
 	}
 
 	for i, test := range tests {
@@ -619,7 +683,7 @@ func TestFindAllGlobs(t *testing.T) {
 				"a": "test",
 			},
 			output: map[string][]string{
-				"a": {},
+				"a": nil,
 			},
 		},
 		{
@@ -661,7 +725,7 @@ func TestFindAllGlobs(t *testing.T) {
 				"a": {
 					"fo",
 				},
-				"b": {},
+				"b": nil,
 			},
 		},
 	}
@@ -679,102 +743,6 @@ func TestFindAllGlobs(t *testing.T) {
 
 			output := mg.FindAllGlobs(test.input)
 			require.Equal(test.output, output)
-		})
-	}
-}
-
-func TestIsConsumable(t *testing.T) {
-	tests := []struct {
-		charRange *parser.Range
-		input     rune
-		output    bool
-	}{
-		{
-			input: 'a',
-			charRange: &parser.Range{
-				CharList: "abc",
-			},
-			output: true,
-		},
-		{
-			input: 'a',
-			charRange: &parser.Range{
-				Bounds: []*parser.Bounds{
-					{
-						Low:  'a',
-						High: 'z',
-					},
-				},
-			},
-			output: true,
-		},
-		{
-			input: 'A',
-			charRange: &parser.Range{
-				CharList: "abc",
-			},
-			output: false,
-		},
-		{
-			input: 'A',
-			charRange: &parser.Range{
-				Bounds: []*parser.Bounds{
-					{
-						Low:  'a',
-						High: 'z',
-					},
-				},
-			},
-			output: false,
-		},
-		{
-			input: 'a',
-			charRange: &parser.Range{
-				Inverse:  true,
-				CharList: "abc",
-			},
-			output: false,
-		},
-		{
-			input: 'a',
-			charRange: &parser.Range{
-				Inverse: true,
-				Bounds: []*parser.Bounds{
-					{
-						Low:  'a',
-						High: 'z',
-					},
-				},
-			},
-			output: false,
-		},
-		{
-			input: 'A',
-			charRange: &parser.Range{
-				Inverse:  true,
-				CharList: "abc",
-			},
-			output: true,
-		},
-		{
-			input: 'A',
-			charRange: &parser.Range{
-				Inverse: true,
-				Bounds: []*parser.Bounds{
-					{
-						Low:  'a',
-						High: 'z',
-					},
-				},
-			},
-			output: true,
-		},
-	}
-
-	for i, test := range tests {
-		t.Run(fmt.Sprint(i), func(t *testing.T) {
-			require := r.New(t)
-			require.Equal(test.output, isConsumable(test.input, test.charRange))
 		})
 	}
 }

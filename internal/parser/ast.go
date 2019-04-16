@@ -56,19 +56,19 @@ func (r *Range) addValidChar(ru rune) {
 	r.CharList += string(ru)
 }
 
-// Contains returns true if the rune is matched by the Range. It ignores Inverse.
-func (r *Range) Contains(ru rune) bool {
+// Matches returns true if the rune is matched by the Range. It ignores Inverse.
+func (r *Range) Matches(ru rune) bool {
 	if strings.ContainsRune(r.CharList, ru) {
-		return true
+		return !r.Inverse
 	}
 
 	for _, bound := range r.Bounds {
 		if bound.Contains(ru) {
-			return true
+			return !r.Inverse
 		}
 	}
 
-	return false
+	return r.Inverse
 }
 
 type Node struct {
@@ -181,7 +181,7 @@ func (n *Node) Index(s string) int {
 	case TypeRange:
 		i := 0
 		for r, l := utf8.DecodeRuneInString(s); !(r == utf8.RuneError && l < 2); r, l = utf8.DecodeRuneInString(s[i:]) {
-			if n.Range.Contains(r) {
+			if n.Range.Matches(r) {
 				return i
 			}
 			i += l
@@ -208,7 +208,7 @@ func (n *Node) LastIndex(s string) int {
 		i := len(s)
 		inBlob := false
 		for r, l := utf8.DecodeLastRuneInString(s); !(r == utf8.RuneError && l < 2); r, l = utf8.DecodeLastRuneInString(s[:i]) {
-			contains := n.Range.Contains(r)
+			contains := n.Range.Matches(r)
 			if contains && !inBlob {
 				inBlob = true
 			} else if !contains && inBlob {

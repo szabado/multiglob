@@ -138,6 +138,102 @@ func TestParser(t *testing.T) {
 	}
 }
 
+func TestContains(t *testing.T) {
+	tests := []struct {
+		charRange *Range
+		input     rune
+		output    bool
+	}{
+		{
+			input: 'a',
+			charRange: &Range{
+				CharList: "abc",
+			},
+			output: true,
+		},
+		{
+			input: 'a',
+			charRange: &Range{
+				Bounds: []*Bounds{
+					{
+						Low:  'a',
+						High: 'z',
+					},
+				},
+			},
+			output: true,
+		},
+		{
+			input: 'A',
+			charRange: &Range{
+				CharList: "abc",
+			},
+			output: false,
+		},
+		{
+			input: 'A',
+			charRange: &Range{
+				Bounds: []*Bounds{
+					{
+						Low:  'a',
+						High: 'z',
+					},
+				},
+			},
+			output: false,
+		},
+		{
+			input: 'a',
+			charRange: &Range{
+				Inverse:  true,
+				CharList: "abc",
+			},
+			output: false,
+		},
+		{
+			input: 'a',
+			charRange: &Range{
+				Inverse: true,
+				Bounds: []*Bounds{
+					{
+						Low:  'a',
+						High: 'z',
+					},
+				},
+			},
+			output: false,
+		},
+		{
+			input: 'A',
+			charRange: &Range{
+				Inverse:  true,
+				CharList: "abc",
+			},
+			output: true,
+		},
+		{
+			input: 'A',
+			charRange: &Range{
+				Inverse: true,
+				Bounds: []*Bounds{
+					{
+						Low:  'a',
+						High: 'z',
+					},
+				},
+			},
+			output: true,
+		},
+	}
+
+	for i, test := range tests {
+		t.Run(fmt.Sprint(i), func(t *testing.T) {
+			require := r.New(t)
+			require.Equal(test.output, test.charRange.Matches(test.input))
+		})
+	}
+}
+
 func TestParseRanges(t *testing.T) {
 	tests := []struct {
 		name   string

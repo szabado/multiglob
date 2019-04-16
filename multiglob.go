@@ -164,7 +164,7 @@ var errTextNotFound = errors.New("text not found")
 // extractGlobs returns the globs based on the pattern. It either returns a nil error or
 // errTextNotFound
 func extractGlobs(input string, ast *parser.Node) ([]string, error) {
-	globs := make([]string, 0)
+	var globs []string
 
 	for leafConsumed := false; !leafConsumed && ast != nil; {
 		switch ast.Type {
@@ -212,14 +212,23 @@ func extractGlobs(input string, ast *parser.Node) ([]string, error) {
 		case parser.TypeRange:
 			lastIndex := -1
 			for i, r := range input {
-				if !ast.Range.Contains(r) {
+				if !ast.Range.Matches(r) {
 					break
 				}
 				lastIndex = i
+				if !ast.Range.Repeated {
+					break
+				}
 			}
 
+			if lastIndex < 0 {
+				return nil, errTextNotFound
+			}
+
+			lastIndex++
+
 			if ast.Leaf {
-				if lastIndex == len(input)-1 {
+				if lastIndex == len(input) {
 					globs = append(globs, input)
 					leafConsumed = true
 					break
@@ -228,22 +237,18 @@ func extractGlobs(input string, ast *parser.Node) ([]string, error) {
 				}
 			}
 
-			for globbed := input[lastIndex:]; globbed != ""; {
+			for globbed := input[:lastIndex]; globbed != ""; {
 				r, size := utf8.DecodeLastRuneInString(globbed)
 				if r == utf8.RuneError && size < 2 {
 					return nil, errTextNotFound
 				}
 
-				globEnds := len(globbed) - size
-				globbed = globbed[:globEnds]
-
-				if !ast.Range.Contains(r) {
-					continue
-				}
-
+				globEnds := len(globbed) - size + 1
 				// we've found a match. Recurse on the tail of input
-				subglobs, err := extractGlobs(trimString(globbed, globEnds), ast.Children[0])
+				subglobs, err := extractGlobs(input[globEnds:], ast.Children[0])
 				if err != nil {
+					// Shrink what is globbed by one
+					globbed = globbed[:globEnds-1]
 					continue
 				}
 
@@ -319,7 +324,7 @@ func match(node *parser.Node, input string, exhaustive bool) ([]string, bool) {
 	case parser.TypeRange:
 		short := input
 		for _, r := range input {
-			if !isConsumable(r, node.Range) {
+			if !node.Range.Matches(r) {
 				break
 			}
 
@@ -366,18 +371,6 @@ func trimString(s string, prefixLen int) string {
 		return ""
 	}
 	return s[prefixLen:]
-}
-
-// isConsumable checks if the rune can be consumed, based on the rules in rnge. If rnge is an inverse
-// parser.Range, it'll return true if the rune doesn't match any of the rnge's rules. If rnge is a
-// normal range, it'll return true if the rune matches any of the rnge's rules.
-func isConsumable(r rune, rnge *parser.Range) bool {
-	contains := rnge.Contains(r)
-	if rnge.Inverse {
-		return !contains
-	}
-
-	return contains
 }
 
 func merge(sl1, sl2 []string) []string {
