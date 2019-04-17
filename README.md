@@ -4,6 +4,7 @@
 [![Build Status](https://travis-ci.com/szabado/multiglob.svg?branch=master)](https://travis-ci.com/szabado/multiglob)
 [![codecov](https://codecov.io/gh/szabado/multiglob/branch/master/graph/badge.svg)](https://codecov.io/gh/szabado/multiglob)
 [![Go Report Card](https://goreportcard.com/badge/github.com/szabado/multiglob)](https://goreportcard.com/report/github.com/szabado/multiglob)
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fszabado%2Fmultiglob.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2Fszabado%2Fmultiglob?ref=badge_shield)
 
 Inspired by a problem I encountered at work, this matches a string against a list of patterns and tells you which
 one it matched against!
@@ -98,3 +99,7 @@ suggest checking out [glob](https://github.com/gobwas/glob).
 
 This requires >= Go 1.11, in order to use the modules. You can _probably_ vendor it in with older versions,
 but as always do so at your own risk.
+
+
+## License
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fszabado%2Fmultiglob.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2Fszabado%2Fmultiglob?ref=badge_large)
