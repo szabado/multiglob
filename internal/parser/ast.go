@@ -247,6 +247,7 @@ func parse(name string, l *lexer.Lexer) (*Node, error) {
 			}
 
 			token = l.Scan()
+			firstRune, _ := utf8.DecodeRuneInString(token.Value)
 			switch token.Type {
 			case lexer.Caret:
 				if charCount == 0 {
@@ -292,7 +293,7 @@ func parse(name string, l *lexer.Lexer) (*Node, error) {
 			case lexer.Text:
 				normalChar = true
 				if escaped {
-					return nil, errors.Errorf(`unknown escaping: \%c`, token.Value[0])
+					return nil, errors.Errorf(`unknown escaping: \%c`, firstRune)
 				}
 			}
 
@@ -300,10 +301,8 @@ func parse(name string, l *lexer.Lexer) (*Node, error) {
 				continue
 			}
 
-			r := rune(token.Value[0])
-
 			if parsingBounds {
-				b, err := newBounds(previous, r)
+				b, err := newBounds(previous, firstRune)
 				if err != nil {
 					return nil, err
 				}
@@ -313,7 +312,7 @@ func parse(name string, l *lexer.Lexer) (*Node, error) {
 				if previousValid {
 					validChars.WriteRune(previous)
 				}
-				previous = r
+				previous = firstRune
 				previousValid = true
 			}
 		}

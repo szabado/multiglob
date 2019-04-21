@@ -19,10 +19,6 @@ const (
 )
 
 const (
-	numRepititions = 720
-)
-
-const (
 	notFruitPattern = "i am a test subject and not a fruit!"
 	fruitPattern    = "ELDERBERRY,APPLE,GRAPEFRUIT,FIG,CHERRY,BANANA,DATE"
 )
@@ -199,8 +195,6 @@ func BenchmarkMultiGlobFindAllPatterns(b *testing.B) {
 
 	matcher := builder.MustCompile()
 
-	//fmt.Println(matcher.FindAllPatterns(fruitPattern))
-
 	b.ResetTimer()
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
@@ -215,8 +209,6 @@ func BenchmarkMultiGlobFindPattern(b *testing.B) {
 	}
 
 	matcher := builder.MustCompile()
-
-	//fmt.Println(matcher.FindAllPatterns(fruitPattern))
 
 	b.ResetTimer()
 	b.ReportAllocs()
