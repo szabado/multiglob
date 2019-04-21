@@ -34,7 +34,7 @@ const (
 type Lexer struct {
 	source   *scanner.Scanner
 	finished bool
-	current  *Token
+	current  Token
 }
 
 // New returns a new Lexer that wraps the given source string.
@@ -50,8 +50,8 @@ func New(source string) *Lexer {
 }
 
 // Scan returns the current token.
-func (l *Lexer) Scan() *Token {
-	return &*l.current
+func (l *Lexer) Scan() Token {
+	return l.current
 }
 
 // Next advances the lexer to the next token, and discards the current one. It must be called before
@@ -63,13 +63,13 @@ func (l *Lexer) Next() bool {
 		for getTokenType(l.source.Peek()) == Asterisk {
 			l.source.Next()
 		}
-		l.current = &Token{
+		l.current = Token{
 			Value: string(r),
 			Type:  Asterisk,
 		}
 
 	case Bracket, Backslash, Caret, Dash, Plus, Text:
-		l.current = &Token{
+		l.current = Token{
 			Value: string(r),
 			Type:  t,
 		}
@@ -78,7 +78,7 @@ func (l *Lexer) Next() bool {
 		fallthrough
 	case eof:
 		l.finished = true
-		l.current = &Token{
+		l.current = Token{
 			Value: "",
 			Type:  eof,
 		}
@@ -88,18 +88,19 @@ func (l *Lexer) Next() bool {
 }
 
 // Peek returns the next token without consuming the current one. If the current token
-// is the last token, Peek returns nil. It can be called before the first call to Next.
-func (l *Lexer) Peek() (token *Token) {
+// is the last token, meaning that the token returned by Peek is invalid, valid will
+// be false. Peek can be called before the first call to Next.
+func (l *Lexer) Peek() (token Token, valid bool) {
 	r := l.source.Peek()
 	t := getTokenType(r)
 	if t == eof {
-		return nil
+		return Token{}, false
 	}
 
-	return &Token{
+	return Token{
 		Value: string(r),
 		Type:  t,
-	}
+	}, true
 }
 
 func getTokenType(r rune) TokenType {

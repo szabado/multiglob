@@ -321,7 +321,7 @@ func parse(name string, l *lexer.Lexer) (*Node, error) {
 		node.Range = rnge
 		rnge.CharList = validChars.String()
 
-		if nextToken := l.Peek(); nextToken != nil {
+		if nextToken, ok := l.Peek(); ok {
 			if nextToken.Type == lexer.Plus {
 				l.Next() // consume the plus
 				node.Range.Repeated = true

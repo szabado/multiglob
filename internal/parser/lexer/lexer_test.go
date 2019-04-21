@@ -9,11 +9,11 @@ import (
 func TestLexer(t *testing.T) {
 	tests := []struct {
 		input  string
-		output []*Token
+		output []Token
 	}{
 		{
 			input: "test",
-			output: []*Token{
+			output: []Token{
 				{
 					Value: "t",
 					Type:  Text,
@@ -34,7 +34,7 @@ func TestLexer(t *testing.T) {
 		},
 		{
 			input: "test*",
-			output: []*Token{
+			output: []Token{
 				{
 					Value: "t",
 					Type:  Text,
@@ -59,7 +59,7 @@ func TestLexer(t *testing.T) {
 		},
 		{
 			input: "test1*test2",
-			output: []*Token{
+			output: []Token{
 				{
 					Value: "t",
 					Type:  Text,
@@ -108,7 +108,7 @@ func TestLexer(t *testing.T) {
 		},
 		{
 			input: "*",
-			output: []*Token{
+			output: []Token{
 				{
 					Value: "*",
 					Type:  Asterisk,
@@ -117,11 +117,11 @@ func TestLexer(t *testing.T) {
 		},
 		{
 			input:  "",
-			output: []*Token{},
+			output: []Token{},
 		},
 		{
 			input: "*****",
-			output: []*Token{
+			output: []Token{
 				{
 					Value: "*",
 					Type:  Asterisk,
@@ -130,7 +130,7 @@ func TestLexer(t *testing.T) {
 		},
 		{
 			input: `\`,
-			output: []*Token{
+			output: []Token{
 				{
 					Value: `\`,
 					Type:  Backslash,
@@ -139,7 +139,7 @@ func TestLexer(t *testing.T) {
 		},
 		{
 			input: `-`,
-			output: []*Token{
+			output: []Token{
 				{
 					Value: `-`,
 					Type:  Dash,
@@ -148,7 +148,7 @@ func TestLexer(t *testing.T) {
 		},
 		{
 			input: `][`,
-			output: []*Token{
+			output: []Token{
 				{
 					Value: `]`,
 					Type:  Bracket,
@@ -161,7 +161,7 @@ func TestLexer(t *testing.T) {
 		},
 		{
 			input: `^`,
-			output: []*Token{
+			output: []Token{
 				{
 					Value: `^`,
 					Type:  Caret,
@@ -170,7 +170,7 @@ func TestLexer(t *testing.T) {
 		},
 		{
 			input: `+`,
-			output: []*Token{
+			output: []Token{
 				{
 					Value: `+`,
 					Type:  Plus,
@@ -183,12 +183,12 @@ func TestLexer(t *testing.T) {
 		t.Run(test.input, func(t *testing.T) {
 			require := r.New(t)
 
-			peeks := make([]*Token, 0)
-			output := make([]*Token, 0)
+			peeks := make([]Token, 0)
+			output := make([]Token, 0)
 			l := New(test.input)
 
 			for finished := false; !finished; {
-				if t := l.Peek(); t != nil {
+				if t, ok := l.Peek(); ok {
 					peeks = append(peeks, t)
 				}
 				finished = !l.Next()
