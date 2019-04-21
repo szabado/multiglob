@@ -368,9 +368,9 @@ func parse(name string, l *lexer.Lexer) (*Node, error) {
 
 func Parse(name, input string) (*Node, error) {
 	root := &Node{
-		Value:    "",
-		Type:     TypeRoot,
-		Leaf:     false,
+		Value: "",
+		Type:  TypeRoot,
+		Leaf:  false,
 	}
 
 	if n, err := parse(name, lexer.New(input)); err != nil {
