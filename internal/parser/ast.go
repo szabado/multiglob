@@ -21,9 +21,9 @@ const (
 
 func newBounds(low, high rune) (*Bounds, error) {
 	if high < low {
-		return nil, errors.Errorf("character range (%s, %s) is out of order",
-			string(low),
-			string(high))
+		return nil, errors.Errorf("character range (%c, %c) is out of order",
+			low,
+			high)
 	}
 
 	return &Bounds{
@@ -45,10 +45,6 @@ type Range struct {
 	Inverse  bool
 	Bounds   []*Bounds
 	CharList string
-}
-
-func (r *Range) addValidChar(ru rune) {
-	r.CharList += string(ru)
 }
 
 // Matches returns true if the rune is matched by the Range.
@@ -238,6 +234,7 @@ func parse(name string, l *lexer.Lexer) (*Node, error) {
 			rnge          = &Range{}
 			charCount     = 0
 			previous      rune
+			validChars    strings.Builder
 			previousValid = false
 			parsingBounds = false
 			normalChar    = false
@@ -274,11 +271,11 @@ func parse(name string, l *lexer.Lexer) (*Node, error) {
 				} else if token.Value == "]" {
 					// Close this, handle error cases
 					if parsingBounds {
-						return nil, errors.Errorf("invalid range syntax %s-", string(previous))
+						return nil, errors.Errorf("invalid range syntax %c-", previous)
 					}
 
 					if previousValid {
-						rnge.addValidChar(previous)
+						validChars.WriteRune(previous)
 					}
 					normalChar = false
 					finished = true
@@ -295,7 +292,7 @@ func parse(name string, l *lexer.Lexer) (*Node, error) {
 			case lexer.Text:
 				normalChar = true
 				if escaped {
-					return nil, errors.Errorf(`unknown escaping: \%s`, string(token.Value[0]))
+					return nil, errors.Errorf(`unknown escaping: \%c`, token.Value[0])
 				}
 			}
 
@@ -314,7 +311,7 @@ func parse(name string, l *lexer.Lexer) (*Node, error) {
 				parsingBounds = false
 			} else {
 				if previousValid {
-					rnge.addValidChar(previous)
+					validChars.WriteRune(previous)
 				}
 				previous = r
 				previousValid = true
@@ -323,6 +320,7 @@ func parse(name string, l *lexer.Lexer) (*Node, error) {
 
 		node.Type = TypeRange
 		node.Range = rnge
+		rnge.CharList = validChars.String()
 
 		if nextToken := l.Peek(); nextToken != nil {
 			if nextToken.Type == lexer.Plus {
@@ -343,7 +341,7 @@ func parse(name string, l *lexer.Lexer) (*Node, error) {
 			node.Type = TypeText
 		default:
 			r, _ := utf8.DecodeRuneInString(nextToken.Value)
-			return nil, errors.Errorf(`unknown character escaping: \%s`, string(r))
+			return nil, errors.Errorf(`unknown character escaping: \%c`, r)
 		}
 
 		// anything other than asterisk, bracket, backslash is an error
