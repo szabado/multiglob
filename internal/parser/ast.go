@@ -367,7 +367,11 @@ func parse(name string, l *lexer.Lexer) (*Node, error) {
 }
 
 func Parse(name, input string) (*Node, error) {
-	root := newRootNode(nil)
+	root := &Node{
+		Value:    "",
+		Type:     TypeRoot,
+		Leaf:     false,
+	}
 
 	if n, err := parse(name, lexer.New(input)); err != nil {
 		return nil, errors.Wrapf(err, "failed to parse %s", input)
@@ -387,15 +391,6 @@ func Parse(name, input string) (*Node, error) {
 
 	root.compress()
 	return root, nil
-}
-
-func newRootNode(children []*Node) *Node {
-	return &Node{
-		Value:    "",
-		Type:     TypeRoot,
-		Children: children,
-		Leaf:     false,
-	}
 }
 
 func Merge(root1, root2 *Node) *Node {
