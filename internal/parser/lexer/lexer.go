@@ -64,13 +64,13 @@ func (l *Lexer) Next() bool {
 			l.source.Next()
 		}
 		l.current = Token{
-			Value: string(r),
+			Value: r,
 			Type:  Asterisk,
 		}
 
 	case Bracket, Backslash, Caret, Dash, Plus, Text:
 		l.current = Token{
-			Value: string(r),
+			Value: r,
 			Type:  t,
 		}
 
@@ -79,7 +79,7 @@ func (l *Lexer) Next() bool {
 	case eof:
 		l.finished = true
 		l.current = Token{
-			Value: "",
+			Value: rune(0),
 			Type:  eof,
 		}
 	}
@@ -98,7 +98,7 @@ func (l *Lexer) Peek() (token Token, valid bool) {
 	}
 
 	return Token{
-		Value: string(r),
+		Value: r,
 		Type:  t,
 	}, true
 }
@@ -125,6 +125,6 @@ func getTokenType(r rune) TokenType {
 }
 
 type Token struct {
-	Value string
+	Value rune
 	Type  TokenType
 }

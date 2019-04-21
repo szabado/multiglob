@@ -222,10 +222,10 @@ func parse(name string, l *lexer.Lexer) (*Node, error) {
 	switch token.Type {
 	case lexer.Asterisk:
 		node.Type = TypeAny
-		node.Value = "*"
+		node.Value = string(token.Value)
 	case lexer.Bracket:
-		if token.Value == "]" {
-			node.Value = token.Value
+		if token.Value == ']' {
+			node.Value = string(token.Value)
 			node.Type = TypeText
 			break
 		}
@@ -247,7 +247,6 @@ func parse(name string, l *lexer.Lexer) (*Node, error) {
 			}
 
 			token = l.Scan()
-			firstRune, _ := utf8.DecodeRuneInString(token.Value)
 			switch token.Type {
 			case lexer.Caret:
 				if charCount == 0 {
@@ -269,7 +268,7 @@ func parse(name string, l *lexer.Lexer) (*Node, error) {
 			case lexer.Bracket:
 				if charCount == 0 || charCount == 1 && rnge.Inverse || escaped {
 					normalChar = true
-				} else if token.Value == "]" {
+				} else if token.Value == ']' {
 					// Close this, handle error cases
 					if parsingBounds {
 						return nil, errors.Errorf("invalid range syntax %c-", previous)
@@ -293,7 +292,7 @@ func parse(name string, l *lexer.Lexer) (*Node, error) {
 			case lexer.Text:
 				normalChar = true
 				if escaped {
-					return nil, errors.Errorf(`unknown escaping: \%c`, firstRune)
+					return nil, errors.Errorf(`unknown escaping: \%c`, token.Value)
 				}
 			}
 
@@ -302,7 +301,7 @@ func parse(name string, l *lexer.Lexer) (*Node, error) {
 			}
 
 			if parsingBounds {
-				b, err := newBounds(previous, firstRune)
+				b, err := newBounds(previous, token.Value)
 				if err != nil {
 					return nil, err
 				}
@@ -312,7 +311,7 @@ func parse(name string, l *lexer.Lexer) (*Node, error) {
 				if previousValid {
 					validChars.WriteRune(previous)
 				}
-				previous = firstRune
+				previous = token.Value
 				previousValid = true
 			}
 		}
@@ -336,16 +335,15 @@ func parse(name string, l *lexer.Lexer) (*Node, error) {
 		nextToken := l.Scan()
 		switch nextToken.Type {
 		case lexer.Bracket, lexer.Asterisk, lexer.Backslash:
-			node.Value = nextToken.Value
+			node.Value = string(nextToken.Value)
 			node.Type = TypeText
 		default:
-			r, _ := utf8.DecodeRuneInString(nextToken.Value)
-			return nil, errors.Errorf(`unknown character escaping: \%c`, r)
+			return nil, errors.Errorf(`unknown character escaping: \%c`, token.Value)
 		}
 
 		// anything other than asterisk, bracket, backslash is an error
 	case lexer.Caret, lexer.Dash, lexer.Text:
-		node.Value = token.Value
+		node.Value = string(token.Value)
 		node.Type = TypeText
 	}
 
