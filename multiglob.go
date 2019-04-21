@@ -277,9 +277,9 @@ func match(node *parser.Node, input string, exhaustive bool) ([]string, bool) {
 	case parser.TypeAny:
 		if node.Leaf {
 			if !exhaustive {
-				return node.Name, true
+				return copySlice(node.Name), true
 			}
-			results = merge(results, node.Name)
+			results = append(results, node.Name...)
 		}
 
 		for _, child := range node.Children {
@@ -293,17 +293,17 @@ func match(node *parser.Node, input string, exhaustive bool) ([]string, bool) {
 				}
 
 				if !exhaustive {
-					return names, true
+					return copySlice(names), true
 				}
-				results = merge(results, names)
+				results = append(results, names...)
 			}
 		}
 	case parser.TypeText:
 		if node.Leaf && node.Value == input {
 			if !exhaustive {
-				return node.Name, true
+				return copySlice(node.Name), true
 			}
-			results = merge(results, node.Name)
+			results = append(results, node.Name...)
 		} else if !strings.HasPrefix(input, node.Value) {
 			return nil, false
 		}
@@ -316,9 +316,9 @@ func match(node *parser.Node, input string, exhaustive bool) ([]string, bool) {
 				continue
 			}
 			if !exhaustive {
-				return names, true
+				return copySlice(names), true
 			}
-			results = merge(results, names)
+			results = append(results, names...)
 		}
 
 	case parser.TypeRange:
@@ -337,9 +337,9 @@ func match(node *parser.Node, input string, exhaustive bool) ([]string, bool) {
 				}
 
 				if !exhaustive {
-					return names, true
+					return copySlice(names), true
 				}
-				results = merge(results, names)
+				results = append(results, names...)
 			}
 
 			if !node.Range.Repeated {
@@ -357,9 +357,9 @@ func match(node *parser.Node, input string, exhaustive bool) ([]string, bool) {
 				continue
 			}
 			if !exhaustive {
-				return names, true
+				return copySlice(names), true
 			}
-			results = merge(results, names)
+			results = append(results, names...)
 		}
 	}
 
@@ -373,12 +373,8 @@ func trimString(s string, prefixLen int) string {
 	return s[prefixLen:]
 }
 
-func merge(sl1, sl2 []string) []string {
-	if sl2 == nil {
-		return sl1
-	} else if sl1 == nil {
-		return sl2
-	} else {
-		return append(sl1, sl2...)
-	}
+func copySlice(sl []string) []string {
+	sl2 := make([]string, len(sl))
+	copy(sl2, sl)
+	return sl2
 }
