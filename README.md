@@ -47,7 +47,7 @@ to know how slow. I benchmarked it against the standard library `regexp` package
 On my laptop, the benchmarks in `comparison_test.go` produce this:
 
 ```
-$ go test . -bench=.                                                                                                                                                                                                          [0]
+$ go test . -bench=.
 goos: linux
 goarch: amd64
 pkg: github.com/szabado/multiglob
