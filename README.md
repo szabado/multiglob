@@ -92,8 +92,3 @@ Yep! But I didn't want the overhead of `http` and I wanted to write this for fun
 
 This only supports wildcards (`*`) and character ranges (`[ab]`, `[^cd]`, `[e-h]`, etc.). If you need more, I'd
 suggest checking out [glob](https://github.com/gobwas/glob).
-
-## Requirements
-
-This requires >= Go 1.11, in order to use the modules. You can _probably_ vendor it in with older versions,
-but as always do so at your own risk.
