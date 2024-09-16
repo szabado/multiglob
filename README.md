@@ -1,7 +1,6 @@
 # multiglob: matching multiple wildcard based patterns 
 
 [![GoDoc](https://godoc.org/github.com/szabado/multiglob?status.svg)](https://godoc.org/github.com/szabado/multiglob)
-[![Build Status](https://travis-ci.com/szabado/multiglob.svg?branch=master)](https://travis-ci.com/szabado/multiglob)
 [![codecov](https://codecov.io/gh/szabado/multiglob/branch/master/graph/badge.svg)](https://codecov.io/gh/szabado/multiglob)
 [![Go Report Card](https://goreportcard.com/badge/github.com/szabado/multiglob)](https://goreportcard.com/report/github.com/szabado/multiglob)
 
