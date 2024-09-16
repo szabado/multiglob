@@ -4,14 +4,11 @@
 [![codecov](https://codecov.io/gh/szabado/multiglob/branch/master/graph/badge.svg)](https://codecov.io/gh/szabado/multiglob)
 [![Go Report Card](https://goreportcard.com/badge/github.com/szabado/multiglob)](https://goreportcard.com/report/github.com/szabado/multiglob)
 
-Inspired by a problem I encountered at work, this matches a string against a list of patterns and tells you which
-one it matched against!
+`multiglob` is a library that for figuring out which glob patterns match a given string.
 
-This uses a Radix tree under the hood and aims to be pretty darn fast.
+It uses a Radix tree under the hood and is optimized for speed.
 
-## Usage:
-
-See under `/example` for the usage, but it's copied below.
+## Example
 
 ```
 func main() {
@@ -40,10 +37,11 @@ func main() {
 
 ## Performance Comparison
 
-The lazy way you can do what multiglob does is loop over the patterns. That's _sloooow_, but I wanted
-to know how slow. I benchmarked it against the standard library `regexp` package as well as 
-[github.com/gobwas/glob](https://github.com/gobwas/glob), which I took some inspiration from.
-On my laptop, the benchmarks in `comparison_test.go` produce this:
+There's a few alternatives to using multiglob:
+- Looping over the patterns using [github.com/gobwas/glob](https://github.com/gobwas/glob), testing which ones match.
+- Looping over the patterns using `regexp`, testing which ones match.
+
+The benchmarks in `comparision_test.go` aim to compare these different possible implementations, with the following results:
 
 ```
 $ go test . -bench=.
@@ -70,25 +68,12 @@ PASS
 ok  	github.com/szabado/multiglob	31.539s
 ```
 
-All the `Multi` benchmarks are matching one string across a bunch of patterns, and all the `Single` one are
-one pattern. Basically? It's **fast**. It's more then 10 times faster than Glob, and that ratio gets better the
-more patterns there are.
+All the `*Multi*` benchmarks are using 720 patterns, and all the `*Single*` tests only include one pattern.
 
-Based on the benchmark, it also has better performance growth than Glob.
-The Multi tests have 720 patterns, and MultiGlob took ~150 times longer to execute the Multi tests compared to
-Glob's ~190 times increase.
+Multiglob is ~10x faster than `glob` when it has a single pattern loaded, and about 14x faster than `glob` when there are all 720 patterns loaded. In both cases, Multiglob and glob are orders of magnitude faster than the `regexp` based solution.
 
-Glob is already _way_ faster than using a Regex. MultiGlob is _way_ faster than doing
-using Glob naively; you just have to accept the reduced functionality.
-
-### Open Questions
-
-
-## Isn't this basically an http router??
-
-Yep! But I didn't want the overhead of `http` and I wanted to write this for fun.
+*Note: these benchmarks were run in early 2019 and might not reflect the current performance of `glob` or `regexp`.*
 
 ## Limitations
 
-This only supports wildcards (`*`) and character ranges (`[ab]`, `[^cd]`, `[e-h]`, etc.). If you need more, I'd
-suggest checking out [glob](https://github.com/gobwas/glob).
+This only supports wildcards (`*`) and character ranges (`[ab]`, `[^cd]`, `[e-h]`, etc.).
